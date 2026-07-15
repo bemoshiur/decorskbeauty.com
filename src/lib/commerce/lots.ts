@@ -34,6 +34,7 @@ export const getFefoLotForVariant = (variantId: number): Promise<FefoLotView | n
         where: { variant: { equals: variantId } },
         depth: 1,
         limit: 500,
+        overrideAccess: true, // staff-only collection; we project only safe fields below
       })
       const lots = docs as StockLot[]
       const chosen = getFefoLot(lots.map(toAllocatable), Date.now())
@@ -75,6 +76,7 @@ export async function verifyBatch(lotCode: string): Promise<BatchVerification | 
     where: { lotCode: { equals: code } },
     depth: 2,
     limit: 1,
+    overrideAccess: true, // staff-only collection; only the safe projection is returned to the page
   })
   const lot = docs[0] as StockLot | undefined
   if (!lot) return null

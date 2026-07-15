@@ -1,3 +1,5 @@
+import { randomBytes } from 'crypto'
+
 import type { CollectionAfterChangeHook } from 'payload'
 
 import { computeLandedCosts, type AllocationBasis, type POLineInput } from '@/lib/inventory/landedCost'
@@ -74,7 +76,9 @@ export const receivePurchaseOrder: CollectionAfterChangeHook = async ({ doc, pre
       overrideAccess: true,
       data: {
         variant: variantId,
-        lotCode: l.lotCode || `${doc.poNumber}-${i + 1}`,
+        // Real lots use the code printed on the package; this fallback is non-guessable so
+        // missing codes can't be enumerated via /verify.
+        lotCode: l.lotCode || `${doc.poNumber}-${randomBytes(3).toString('hex').toUpperCase()}`,
         mfgDate: l.mfgDate ?? undefined,
         expDate: l.expDate ?? undefined,
         qtyReceived: l.qty,

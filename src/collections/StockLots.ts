@@ -11,7 +11,9 @@ export const StockLots: CollectionConfig = {
     group: 'Inventory',
     defaultColumns: ['lotCode', 'variant', 'expDate', 'qtyAvailable', 'status'],
   },
-  access: { read: () => true },
+  // Staff-only: lots carry landedCostPerUnit (COGS) + PO refs. The public /verify and PDP read
+  // through lib/commerce with overrideAccess and project only the safe fields — never the REST API.
+  access: { read: ({ req }) => Boolean(req.user) },
   indexes: [{ fields: ['lotCode'] }],
   fields: [
     { name: 'variant', type: 'relationship', relationTo: 'variants', required: true },
