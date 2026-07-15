@@ -1,9 +1,9 @@
 {
   "crons": [
-    { "path": "/api/cron/courier-sync", "schedule": "*/30 * * * *" },
-    { "path": "/api/cron/capi-drain", "schedule": "* * * * *" },
+    { "path": "/api/cron/courier-sync", "schedule": "0 6 * * *" },
+    { "path": "/api/cron/capi-drain", "schedule": "0 7 * * *" },
     { "path": "/api/cron/sku-parity", "schedule": "0 3 * * *" },
-    { "path": "/api/cron/release-stale", "schedule": "*/15 * * * *" },
+    { "path": "/api/cron/release-stale", "schedule": "0 5 * * *" },
     { "path": "/api/cron/expiry-scan", "schedule": "0 2 * * *" }
   ]
 }
