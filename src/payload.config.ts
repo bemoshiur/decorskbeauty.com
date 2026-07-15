@@ -43,7 +43,12 @@ const isProd = process.env.NODE_ENV === 'production'
 const blobToken = process.env.BLOB_READ_WRITE_TOKEN
 
 export default buildConfig({
-  serverURL: process.env.NEXT_PUBLIC_SITE_URL || undefined,
+  // Leave serverURL undefined so Payload emits RELATIVE media URLs (/api/media/file/...), which
+  // resolve against whatever origin actually serves the page (localhost / *.vercel.app / the real
+  // domain). Setting it to NEXT_PUBLIC_SITE_URL (the SEO/canonical domain) hardcoded every <img> to
+  // https://decorskbeauty.com — a domain not yet serving the app — so all images 404. SEO/feed URLs
+  // build their own absolute URLs from NEXT_PUBLIC_SITE_URL in lib/seo, independent of this.
+  serverURL: undefined,
   admin: {
     user: Users.slug,
     meta: {
