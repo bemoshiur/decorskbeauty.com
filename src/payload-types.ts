@@ -80,6 +80,9 @@ export interface Config {
     stockMovements: StockMovement;
     carts: Cart;
     otpChallenges: OtpChallenge;
+    customers: Customer;
+    orders: Order;
+    transactions: Transaction;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -100,6 +103,9 @@ export interface Config {
     stockMovements: StockMovementsSelect<false> | StockMovementsSelect<true>;
     carts: CartsSelect<false> | CartsSelect<true>;
     otpChallenges: OtpChallengesSelect<false> | OtpChallengesSelect<true>;
+    customers: CustomersSelect<false> | CustomersSelect<true>;
+    orders: OrdersSelect<false> | OrdersSelect<true>;
+    transactions: TransactionsSelect<false> | TransactionsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -659,6 +665,190 @@ export interface OtpChallenge {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "customers".
+ */
+export interface Customer {
+  id: number;
+  phone: string;
+  name?: string | null;
+  email?: string | null;
+  addresses?:
+    | {
+        address?: string | null;
+        zone?: ('dhakaCity' | 'dhakaSub' | 'outside') | null;
+        landmark?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  orderCount?: number | null;
+  deliveredCount?: number | null;
+  cancelledCount?: number | null;
+  lifetimeValue?: number | null;
+  blacklisted?: boolean | null;
+  blacklistReason?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "orders".
+ */
+export interface Order {
+  id: number;
+  orderNumber?: string | null;
+  channel?: ('web' | 'facebook' | 'phone' | 'walkIn') | null;
+  customer?: (number | null) | Customer;
+  phone?: string | null;
+  email?: string | null;
+  /**
+   * Price + cost snapshots are mandatory — last month’s invoice must not change (§4.3).
+   */
+  items?:
+    | {
+        variant?: (number | null) | Variant;
+        titleSnapshot?: string | null;
+        skuSnapshot?: string | null;
+        unitPriceSnapshot?: number | null;
+        qty?: number | null;
+        lineTotal?: number | null;
+        fulfilmentMode?: string | null;
+        lotAllocations?:
+          | {
+              lot?: (number | null) | StockLot;
+              qty?: number | null;
+              landedCostSnapshot?: number | null;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  orderType?: ('ready' | 'preorder' | 'mixed') | null;
+  subtotal?: number | null;
+  discountTotal?: number | null;
+  deliveryCharge?: number | null;
+  grandTotal?: number | null;
+  advanceRequired?: number | null;
+  advancePaid?: number | null;
+  /**
+   * What the courier collects (amount_to_collect) — never grandTotal (#2).
+   */
+  codAmount?: number | null;
+  paymentMethod?: ('cod' | 'epsFull' | 'epsAdvance') | null;
+  paymentStatus?: ('unpaid' | 'advancePaid' | 'paid' | 'refunded' | 'partialRefund') | null;
+  fulfilmentStatus?:
+    | ('pending' | 'confirmed' | 'packed' | 'handedToCourier' | 'inTransit' | 'delivered' | 'returned' | 'cancelled')
+    | null;
+  zone?: ('dhakaCity' | 'dhakaSub' | 'outside') | null;
+  shipping?: {
+    name?: string | null;
+    phone?: string | null;
+    altPhone?: string | null;
+    address?: string | null;
+    cityId?: string | null;
+    zoneId?: string | null;
+    areaId?: string | null;
+    landmark?: string | null;
+    postcode?: string | null;
+  };
+  courier?: {
+    provider?: ('pathao' | 'steadfast' | 'manual') | null;
+    consignmentId?: string | null;
+    trackingCode?: string | null;
+    pushedAt?: string | null;
+    lastSyncAt?: string | null;
+  };
+  /**
+   * fbp/fbc persisted here, not read from cookies at Purchase time (#8). eventIds for CAPI (Phase 6).
+   */
+  attribution?: {
+    fbp?: string | null;
+    fbc?: string | null;
+    fbclid?: string | null;
+    utmSource?: string | null;
+    utmMedium?: string | null;
+    utmCampaign?: string | null;
+    clientIp?: string | null;
+    userAgent?: string | null;
+    landingPath?: string | null;
+    eventIds?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+  };
+  riskFlags?: ('newCustomer' | 'highValue' | 'repeatCanceller' | 'addressMismatch' | 'inAppBrowser')[] | null;
+  /**
+   * Append-only.
+   */
+  timeline?:
+    | {
+        at?: string | null;
+        actor?: string | null;
+        event?: string | null;
+        note?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  internalNotes?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "transactions".
+ */
+export interface Transaction {
+  id: number;
+  order?: (number | null) | Order;
+  merchantTransactionId: string;
+  epsTransactionId?: string | null;
+  amount?: number | null;
+  purpose?: ('advance' | 'full') | null;
+  status?: ('pending' | 'success' | 'failed' | 'cancelled' | 'unknown') | null;
+  rawInit?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  rawVerify?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  verifiedAt?: string | null;
+  financialEntity?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -732,6 +922,18 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'otpChallenges';
         value: number | OtpChallenge;
+      } | null)
+    | ({
+        relationTo: 'customers';
+        value: number | Customer;
+      } | null)
+    | ({
+        relationTo: 'orders';
+        value: number | Order;
+      } | null)
+    | ({
+        relationTo: 'transactions';
+        value: number | Transaction;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -1134,6 +1336,141 @@ export interface OtpChallengesSelect<T extends boolean = true> {
   lockedUntil?: T;
   ip?: T;
   consumed?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "customers_select".
+ */
+export interface CustomersSelect<T extends boolean = true> {
+  phone?: T;
+  name?: T;
+  email?: T;
+  addresses?:
+    | T
+    | {
+        address?: T;
+        zone?: T;
+        landmark?: T;
+        id?: T;
+      };
+  orderCount?: T;
+  deliveredCount?: T;
+  cancelledCount?: T;
+  lifetimeValue?: T;
+  blacklisted?: T;
+  blacklistReason?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "orders_select".
+ */
+export interface OrdersSelect<T extends boolean = true> {
+  orderNumber?: T;
+  channel?: T;
+  customer?: T;
+  phone?: T;
+  email?: T;
+  items?:
+    | T
+    | {
+        variant?: T;
+        titleSnapshot?: T;
+        skuSnapshot?: T;
+        unitPriceSnapshot?: T;
+        qty?: T;
+        lineTotal?: T;
+        fulfilmentMode?: T;
+        lotAllocations?:
+          | T
+          | {
+              lot?: T;
+              qty?: T;
+              landedCostSnapshot?: T;
+              id?: T;
+            };
+        id?: T;
+      };
+  orderType?: T;
+  subtotal?: T;
+  discountTotal?: T;
+  deliveryCharge?: T;
+  grandTotal?: T;
+  advanceRequired?: T;
+  advancePaid?: T;
+  codAmount?: T;
+  paymentMethod?: T;
+  paymentStatus?: T;
+  fulfilmentStatus?: T;
+  zone?: T;
+  shipping?:
+    | T
+    | {
+        name?: T;
+        phone?: T;
+        altPhone?: T;
+        address?: T;
+        cityId?: T;
+        zoneId?: T;
+        areaId?: T;
+        landmark?: T;
+        postcode?: T;
+      };
+  courier?:
+    | T
+    | {
+        provider?: T;
+        consignmentId?: T;
+        trackingCode?: T;
+        pushedAt?: T;
+        lastSyncAt?: T;
+      };
+  attribution?:
+    | T
+    | {
+        fbp?: T;
+        fbc?: T;
+        fbclid?: T;
+        utmSource?: T;
+        utmMedium?: T;
+        utmCampaign?: T;
+        clientIp?: T;
+        userAgent?: T;
+        landingPath?: T;
+        eventIds?: T;
+      };
+  riskFlags?: T;
+  timeline?:
+    | T
+    | {
+        at?: T;
+        actor?: T;
+        event?: T;
+        note?: T;
+        id?: T;
+      };
+  internalNotes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "transactions_select".
+ */
+export interface TransactionsSelect<T extends boolean = true> {
+  order?: T;
+  merchantTransactionId?: T;
+  epsTransactionId?: T;
+  amount?: T;
+  purpose?: T;
+  status?: T;
+  rawInit?: T;
+  rawVerify?: T;
+  verifiedAt?: T;
+  financialEntity?: T;
   updatedAt?: T;
   createdAt?: T;
 }

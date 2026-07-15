@@ -23,6 +23,9 @@ import { StockLots } from './collections/StockLots'
 import { StockMovements } from './collections/StockMovements'
 import { Carts } from './collections/Carts'
 import { OtpChallenges } from './collections/OtpChallenges'
+import { Customers } from './collections/Customers'
+import { Orders } from './collections/Orders'
+import { Transactions } from './collections/Transactions'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -56,6 +59,9 @@ export default buildConfig({
     StockMovements,
     Carts,
     OtpChallenges,
+    Customers,
+    Orders,
+    Transactions,
   ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
