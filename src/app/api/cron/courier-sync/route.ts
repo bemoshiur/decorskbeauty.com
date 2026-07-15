@@ -3,17 +3,18 @@ import { getPayload } from 'payload'
 import config from '@payload-config'
 
 import { applyCourierStatus } from '@/lib/commerce/courierWebhook'
+import { safeEqual } from '@/lib/auth/timingSafe'
 
 export const maxDuration = 60
 
 /**
  * 30-min reconciling cron (§9.4). BD courier webhooks get dropped — poll any order stuck in
- * handedToCourier / inTransit and apply the real status. Auth: CRON_SECRET.
+ * handedToCourier / inTransit and apply the real status. Auth: CRON_SECRET (Bearer header, as Vercel sends).
  */
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET
-  const provided = req.headers.get('authorization')?.replace(/^Bearer /, '') ?? req.nextUrl.searchParams.get('secret')
-  if (!secret || provided !== secret) return NextResponse.json({ ok: false }, { status: 401 })
+  const provided = req.headers.get('authorization')?.replace(/^Bearer /, '')
+  if (!secret || !safeEqual(provided, secret)) return NextResponse.json({ ok: false }, { status: 401 })
 
   const payload = await getPayload({ config })
   const { docs } = await payload.find({
@@ -34,7 +35,7 @@ export async function GET(req: NextRequest) {
         provider === 'pathao'
           ? (await (await import('@/lib/integrations/pathao/client')).pathaoStatus(cid)).status
           : (await (await import('@/lib/integrations/steadfast/client')).steadfastStatus(cid)).status
-      await applyCourierStatus(payload, order.orderNumber, status)
+      await applyCourierStatus(payload, order.orderNumber, status, provider)
       synced++
     } catch {
       // courier API hiccup — try again next tick

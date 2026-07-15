@@ -12,16 +12,29 @@ export function normalizeCourierStatus(raw: string | undefined | null): CourierS
   return 'other'
 }
 
-/** Apply a courier status update to an order (§9.4). Idempotent via the fulfilment helpers. */
-export async function applyCourierStatus(payload: Payload, orderNumber: string, rawStatus: string) {
+/**
+ * Apply a courier status update to an order (§9.4). Scoped to the calling courier (no cross-courier
+ * forgery) and terminal transitions require a shipped pre-state + a consignment id. Idempotent.
+ */
+export async function applyCourierStatus(payload: Payload, orderNumber: string, rawStatus: string, callingProvider: 'pathao' | 'steadfast') {
   const { docs } = await payload.find({ collection: 'orders', where: { orderNumber: { equals: orderNumber } }, limit: 1, depth: 0, overrideAccess: true })
   const order = docs[0]
   if (!order) return { ok: false as const, reason: 'order not found' }
 
+  // Only the courier that actually shipped this order may move it.
+  if (order.courier?.provider && order.courier.provider !== callingProvider) {
+    return { ok: false as const, reason: 'provider mismatch' }
+  }
+  const shipped = (order.fulfilmentStatus === 'handedToCourier' || order.fulfilmentStatus === 'inTransit') && Boolean(order.courier?.consignmentId)
+
   const status = normalizeCourierStatus(rawStatus)
-  if (status === 'delivered') await markDelivered(payload, order.id)
-  else if (status === 'returned') await markReturned(payload, order.id, 'rto')
-  else if (status === 'inTransit' && order.fulfilmentStatus === 'handedToCourier') {
+  if (status === 'delivered') {
+    if (!shipped) return { ok: false as const, reason: 'not shipped' }
+    await markDelivered(payload, order.id)
+  } else if (status === 'returned') {
+    if (!shipped) return { ok: false as const, reason: 'not shipped' }
+    await markReturned(payload, order.id, 'rto')
+  } else if (status === 'inTransit' && order.fulfilmentStatus === 'handedToCourier') {
     await payload.update({ collection: 'orders', id: order.id, data: { fulfilmentStatus: 'inTransit' }, overrideAccess: true })
   }
   return { ok: true as const, status }

@@ -37,6 +37,8 @@ export async function markHandedToCourier(payload: Payload, orderId: number) {
 export async function markDelivered(payload: Payload, orderId: number) {
   const order = await payload.findByID({ collection: 'orders', id: orderId, depth: 0, overrideAccess: true })
   if (order.fulfilmentStatus === 'delivered') return // idempotent
+  // Only a shipped order can be delivered — never a returned/cancelled/pending one.
+  if (order.fulfilmentStatus !== 'handedToCourier' && order.fulfilmentStatus !== 'inTransit') return
   await payload.update({
     collection: 'orders',
     id: orderId,
@@ -51,6 +53,11 @@ export async function markReturned(payload: Payload, orderId: number, type: 'rto
   const order = await payload.findByID({ collection: 'orders', id: orderId, depth: 0, overrideAccess: true })
   if (order.fulfilmentStatus === 'returned') return // idempotent
 
+  const from = order.fulfilmentStatus
+  // Valid FROM states: RTO comes from a shipped-but-undelivered order; a customer return from delivered.
+  if (type === 'rto' && from !== 'handedToCourier' && from !== 'inTransit') return
+  if (type === 'customerReturn' && from !== 'delivered') return
+
   const returnItems: { variant: number; qty: number; condition: 'resellable' }[] = []
   for (const item of order.items ?? []) {
     const variantId = relId(item.variant)
@@ -63,7 +70,17 @@ export async function markReturned(payload: Payload, orderId: number, type: 'rto
     }
   }
   await payload.create({ collection: 'returns', overrideAccess: true, data: { order: orderId, type, items: returnItems, condition: 'resellable', status: 'processed' } })
-  await payload.update({ collection: 'orders', id: orderId, data: { fulfilmentStatus: 'returned', timeline: [...(order.timeline ?? []), { at: now(), actor: 'courier', event: 'returned', note: type }] }, overrideAccess: true })
-  await bumpCustomer(payload, order.customer, (c) => ({ cancelledCount: c.cancelledCount + 1 }))
+  await payload.update({
+    collection: 'orders',
+    id: orderId,
+    data: { fulfilmentStatus: 'returned', paymentStatus: from === 'delivered' ? 'refunded' : order.paymentStatus, timeline: [...(order.timeline ?? []), { at: now(), actor: 'courier', event: 'returned', note: type }] },
+    overrideAccess: true,
+  })
+  // RTO (never delivered) → cancelledCount. Customer return (was delivered) → undo the delivered counters.
+  if (from === 'delivered') {
+    await bumpCustomer(payload, order.customer, (c) => ({ deliveredCount: Math.max(0, c.deliveredCount - 1), lifetimeValue: Math.max(0, c.lifetimeValue - (order.grandTotal ?? 0)) }))
+  } else {
+    await bumpCustomer(payload, order.customer, (c) => ({ cancelledCount: c.cancelledCount + 1 }))
+  }
   // Reverse the sale journal → Phase 7.
 }
