@@ -17,6 +17,10 @@ import { Categories } from './collections/Categories'
 import { Ingredients } from './collections/Ingredients'
 import { Products } from './collections/Products'
 import { Variants } from './collections/Variants'
+import { Suppliers } from './collections/Suppliers'
+import { PurchaseOrders } from './collections/PurchaseOrders'
+import { StockLots } from './collections/StockLots'
+import { StockMovements } from './collections/StockMovements'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -36,7 +40,19 @@ export default buildConfig({
     },
   },
   // Single-locale English (i18n intentionally dropped — see JOURNEY 2026-07-15 / [[english-only-override]]).
-  collections: [Users, Media, Brands, Categories, Ingredients, Products, Variants],
+  collections: [
+    Users,
+    Media,
+    Brands,
+    Categories,
+    Ingredients,
+    Products,
+    Variants,
+    Suppliers,
+    PurchaseOrders,
+    StockLots,
+    StockMovements,
+  ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

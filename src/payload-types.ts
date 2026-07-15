@@ -74,6 +74,10 @@ export interface Config {
     ingredients: Ingredient;
     products: Product;
     variants: Variant;
+    suppliers: Supplier;
+    purchaseOrders: PurchaseOrder;
+    stockLots: StockLot;
+    stockMovements: StockMovement;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -88,6 +92,10 @@ export interface Config {
     ingredients: IngredientsSelect<false> | IngredientsSelect<true>;
     products: ProductsSelect<false> | ProductsSelect<true>;
     variants: VariantsSelect<false> | VariantsSelect<true>;
+    suppliers: SuppliersSelect<false> | SuppliersSelect<true>;
+    purchaseOrders: PurchaseOrdersSelect<false> | PurchaseOrdersSelect<true>;
+    stockLots: StockLotsSelect<false> | StockLotsSelect<true>;
+    stockMovements: StockMovementsSelect<false> | StockMovementsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -486,6 +494,120 @@ export interface Variant {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "suppliers".
+ */
+export interface Supplier {
+  id: number;
+  name: string;
+  country?: string | null;
+  contact?: string | null;
+  defaultCurrency?: ('KRW' | 'USD') | null;
+  notes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "purchaseOrders".
+ */
+export interface PurchaseOrder {
+  id: number;
+  poNumber: string;
+  supplier?: (number | null) | Supplier;
+  currency?: ('KRW' | 'USD') | null;
+  /**
+   * Foreign → BDT.
+   */
+  fxRate: number;
+  /**
+   * Intake per line: variant, qty, unit cost (foreign) + the lot printed on the package.
+   */
+  lines?:
+    | {
+        variant: number | Variant;
+        qty: number;
+        unitCostForeign: number;
+        lotCode?: string | null;
+        mfgDate?: string | null;
+        expDate?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  freightBDT?: number | null;
+  dutyBDT?: number | null;
+  vatAtImportBDT?: number | null;
+  clearingBDT?: number | null;
+  otherChargesBDT?: number | null;
+  allocationBasis?: ('byValue' | 'byWeight' | 'byQty') | null;
+  status?: ('draft' | 'ordered' | 'inTransit' | 'customs' | 'received' | 'closed') | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "stockLots".
+ */
+export interface StockLot {
+  id: number;
+  variant: number | Variant;
+  /**
+   * The code printed on the package.
+   */
+  lotCode: string;
+  mfgDate?: string | null;
+  expDate?: string | null;
+  qtyReceived?: number | null;
+  /**
+   * Maintained ONLY by the stock-movement hook (#4).
+   */
+  qtyAvailable?: number | null;
+  qtyReserved?: number | null;
+  qtyDamaged?: number | null;
+  purchaseOrder?: (number | null) | PurchaseOrder;
+  /**
+   * Set at receive. Drives COGS. Hidden from packer/support in Phase 9 RBAC.
+   */
+  landedCostPerUnit?: number | null;
+  receivedAt?: string | null;
+  /**
+   * Invoice, BL, customs release, brand authorization — surfaced on /verify.
+   */
+  importDocs?:
+    | {
+        doc: number | Media;
+        label?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  status?: ('open' | 'depleted' | 'quarantined' | 'expired') | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "stockMovements".
+ */
+export interface StockMovement {
+  id: number;
+  lot?: (number | null) | StockLot;
+  variant: number | Variant;
+  /**
+   * Signed. + adds to available, − removes.
+   */
+  qty: number;
+  type: 'receipt' | 'reserve' | 'release' | 'ship' | 'returnRestock' | 'damage' | 'adjustment' | 'expiryWriteoff';
+  /**
+   * e.g. purchaseOrder, order, return
+   */
+  refType?: string | null;
+  refId?: string | null;
+  actor?: (number | null) | User;
+  at?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -535,6 +657,22 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'variants';
         value: number | Variant;
+      } | null)
+    | ({
+        relationTo: 'suppliers';
+        value: number | Supplier;
+      } | null)
+    | ({
+        relationTo: 'purchaseOrders';
+        value: number | PurchaseOrder;
+      } | null)
+    | ({
+        relationTo: 'stockLots';
+        value: number | StockLot;
+      } | null)
+    | ({
+        relationTo: 'stockMovements';
+        value: number | StockMovement;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -807,6 +945,92 @@ export interface VariantsSelect<T extends boolean = true> {
   image?: T;
   active?: T;
   availableQty?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "suppliers_select".
+ */
+export interface SuppliersSelect<T extends boolean = true> {
+  name?: T;
+  country?: T;
+  contact?: T;
+  defaultCurrency?: T;
+  notes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "purchaseOrders_select".
+ */
+export interface PurchaseOrdersSelect<T extends boolean = true> {
+  poNumber?: T;
+  supplier?: T;
+  currency?: T;
+  fxRate?: T;
+  lines?:
+    | T
+    | {
+        variant?: T;
+        qty?: T;
+        unitCostForeign?: T;
+        lotCode?: T;
+        mfgDate?: T;
+        expDate?: T;
+        id?: T;
+      };
+  freightBDT?: T;
+  dutyBDT?: T;
+  vatAtImportBDT?: T;
+  clearingBDT?: T;
+  otherChargesBDT?: T;
+  allocationBasis?: T;
+  status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "stockLots_select".
+ */
+export interface StockLotsSelect<T extends boolean = true> {
+  variant?: T;
+  lotCode?: T;
+  mfgDate?: T;
+  expDate?: T;
+  qtyReceived?: T;
+  qtyAvailable?: T;
+  qtyReserved?: T;
+  qtyDamaged?: T;
+  purchaseOrder?: T;
+  landedCostPerUnit?: T;
+  receivedAt?: T;
+  importDocs?:
+    | T
+    | {
+        doc?: T;
+        label?: T;
+        id?: T;
+      };
+  status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "stockMovements_select".
+ */
+export interface StockMovementsSelect<T extends boolean = true> {
+  lot?: T;
+  variant?: T;
+  qty?: T;
+  type?: T;
+  refType?: T;
+  refId?: T;
+  actor?: T;
+  at?: T;
   updatedAt?: T;
   createdAt?: T;
 }

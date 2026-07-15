@@ -7,9 +7,11 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
-    include: ['tests/int/**/*.int.spec.ts'],
+    include: ['tests/int/**/*.int.spec.ts', 'tests/unit/**/*.spec.ts'],
     // Booting Payload pushes schema to remote Neon on first run — allow time for it.
     hookTimeout: 60000,
     testTimeout: 30000,
+    // Run test files sequentially so two Payload inits don't race on CREATE TYPE for new enums.
+    fileParallelism: false,
   },
 })
