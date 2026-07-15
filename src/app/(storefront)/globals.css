@@ -1,0 +1,42 @@
+@import 'tailwindcss';
+
+/*
+  Decor's K-Beauty design tokens — BUILD_PROMPT §16.2.
+  Do NOT introduce a colour outside this set. No pastel pink (category default).
+  Bengali faces intentionally dropped — English-only build (see JOURNEY 2026-07-15).
+*/
+@theme {
+  /* Colour — six values, no others */
+  --color-paper: #f2f4f1; /* cool pharmacy-shelf paper */
+  --color-ink: #14181a; /* cool near-black, all body text */
+  --color-celadon: #7fa893; /* Goryeo celadon, primary accent */
+  --color-celadon-deep: #2f5d4a; /* headers, seals, active states */
+  --color-seal: #c0362c; /* stamp red — RATIONED: authenticity seal + expiry warnings only */
+  --color-grey: #8e958f; /* meta, dividers, disabled */
+
+  /* Type — Latin display/UI (Anek Latin) + evidential (Martian Mono) */
+  --font-sans: var(--font-anek-latin), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-martian-mono), ui-monospace, 'SFMono-Regular', monospace;
+
+  /* Strict 4pt grid (§16.2) */
+  --spacing: 0.25rem;
+
+  /* Radius: 0 on evidential elements (slip, badges, tables); 4px on interactive controls */
+  --radius-control: 4px;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  /* iOS: explicit tap highlight (§13.6) */
+  -webkit-tap-highlight-color: color-mix(in srgb, var(--color-celadon) 25%, transparent);
+}
+
+body {
+  font-family: var(--font-sans);
+  min-height: 100dvh; /* dvh not vh — iOS Safari toolbar collapse (§13.6) */
+}
