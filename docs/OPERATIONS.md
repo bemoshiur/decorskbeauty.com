@@ -2,6 +2,37 @@
 
 Operational runbooks for the Phase 9 hardening items that are procedures, not code paths.
 
+## Production migrations (§2.1 — `push: false` in prod)
+
+Production runs with `push: false`, so the schema is created/updated **only** by migrations —
+Payload will not auto-sync tables. The baseline migration (all 95 tables/enums) is committed at
+`src/migrations/20260715_220439_initial.ts`, and Vercel runs it on every deploy via
+`vercel.json → buildCommand: "pnpm migrate && pnpm build"` (migrate first, so the pre-render step
+has its tables).
+
+**Deploy against a FRESH prod database (recommended):** set `DATABASE_URL` to a new, empty Neon
+database. Vercel's build runs `pnpm migrate` → creates the whole schema → builds. Clean separation of
+dev and prod data. This is the intended path.
+
+**Reusing the existing (push-built) dev DB instead:** that database has the schema but no
+`payload_migrations` record, so `pnpm migrate` would try to re-create existing tables and fail.
+Either (a) point prod at a fresh DB (above), or (b) baseline it once —
+`psql "$DATABASE_URL" -c "INSERT INTO payload_migrations (name, batch) VALUES ('20260715_220439_initial', 1)"` —
+so migrate treats the baseline as already applied.
+
+**Adding a schema change later:** in dev (push) it applies automatically; then run
+`pnpm migrate:create <name>` to generate the migration, commit it, and the next deploy applies it.
+
+## Media storage in production (Vercel Blob)
+
+Uploaded images are served from `/api/media/file/...`. Locally (no `BLOB_READ_WRITE_TOKEN`) they live
+on disk. **On Vercel (serverless) there is no persistent disk**, so set `BLOB_READ_WRITE_TOKEN` — the
+config already enables `vercelBlobStorage` when it's present, and media then serves from Blob (absolute
+URLs that always load). The seeded product images live on the local dev disk only; re-upload them (or
+run the media seed) once Blob is configured, or images will 404 in production. **Also replace the seed
+product photos** — they have a purple studio background with price/code text baked in; clean shots are
+needed for a launch-quality look.
+
 ## Backup & restore drill (§19 Phase 9)
 
 Neon provides continuous backups + point-in-time restore (PITR) on the branch. That is the primary
