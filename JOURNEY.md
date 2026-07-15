@@ -246,3 +246,27 @@ Full double-entry (§12). Every financial event posts a **balanced** journal (#5
 **Verified:** typecheck, **95 tests** (+25: 14 posting-rule balances + validateBalance + 7 lifecycle int incl. trial-balance-ties, closed-period reject, posted-line immutability), lint (0 errors), build.
 
 **Next:** Phase 8 — Reports/back-office (§11.6 CSV reports, RTO analytics, reconciliation UI, period close) or as Moshiur directs. No new creds.
+
+---
+
+## 2026-07-15 · Phase 8 · SEO/AEO
+
+Corrected a mislabel: §19 Phase 8 is **SEO/AEO** (not "reports" — that stays deferred). Beat the incumbents on structure. English-only build, so the bilingual pieces (hreflang→bn, Bengali AEO copy, meta.bn sitemap, acceptance #30) collapse to single-locale English — the *structure* is what ships.
+
+**Shipped:**
+- **Structured data** (`lib/seo/jsonld.ts` + `<JsonLd>`, `<`→`<` escaped): Organization + WebSite/SearchAction (every page), HealthAndBeautyBusiness/LocalBusiness (home), BreadcrumbList, **Product + Offer with `shippingDetails` (real ৳80/৳110/৳140 from the delivery-charge source, no magic numbers) and `hasMerchantReturnPolicy`** — the two properties every competitor omits — FAQPage from `products.faq`, ItemList (home), DefinedTerm/DefinedTermSet (ingredients). Offer carries `sku` byte-identical to the feed/Pixel/CAPI (#1). **No AggregateRating** — there is no reviews collection, so it can never render fake (#12/#29, satisfied by construction).
+- **Technical**: `robots.ts` (GPTBot/ClaudeBot/PerplexityBot/Google-Extended allowed; /admin /api /checkout /account /cart blocked), sitemap index + per-type children (products/ingredients/static), self-referencing canonicals, `llms.txt` + `llms-full.txt`, **IndexNow** ping on product publish (creds-gated INDEXNOW_KEY + `/indexnow-key.txt`).
+- **Ingredient glossary** `/ingredients` + `/ingredients/[slug]` (DefinedTerm) with cached data helpers.
+- Return-policy config in `settings` (`returnsAccepted` + `returnWindowDays`) so `hasMerchantReturnPolicy` is a real claim, never fabricated — **confirm before go-live**.
+
+**Adversarial verification** (5 lenses → 2 skeptics, 9 agents) found **2 real bugs, both fixed + tested**:
+1. **Dead sitemaps (high)** — `sitemap-categories.xml` / `sitemap-brands.xml` emitted `/categories/{slug}` + `/brands/{slug}` URLs but those PLP routes don't exist (deferred in Phase 1) → every entry a 404. Removed both children + routes until the category/brand pages ship.
+2. **Offer-less Product (low)** — a published product with zero active variants emitted a Product with no offers/rating → Rich Results ERROR. `productJsonLd` now returns null (no Product node) when there are no variants.
+
+**Non-negotiables touched:** **#1** (Offer.sku === variants.sku, byte-identical), **#12/#29** (AggregateRating cannot render without approved reviews — no reviews collection exists, verified unbypassable).
+
+**Deferred (flagged):** the **blog** (`posts` collection + `/blog` + Article + posts sitemap), the **category/brand PLP routes** (and their sitemaps), and the **dead-SKU 301 `redirects`** collection (§14.1) → Phase 9 Hardening. LocalBusiness `geo`/`openingHours` omitted rather than fabricated (add to settings when known).
+
+**Verified:** typecheck, **110 tests** (+15: Product/Offer sku+shipping+returns, no-rating, AggregateOffer range, pre-order/OOS availability, zero-variant null, FAQPage/ItemList/DefinedTerm, sitemap/robots), lint (0 errors), build.
+
+**Next:** Phase 9 — Hardening (rate limits, RBAC field-level audit — packer can't see landed cost, near-expiry cron, alerts, abandoned-cart release, backup/restore, load test). Plus the Phase-8 deferrals (blog, category/brand pages, redirects).
