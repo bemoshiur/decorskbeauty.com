@@ -181,3 +181,34 @@ Owner supplied the Pathao repo (enuenan/pathao-courier) + Steadfast docs mid-pha
 **Verified:** typecheck, **59 tests** (courier #2 + weight + status-normalize, fraud policy, **RTO restock #12 end-to-end**), lint (0 errors), build; webhooks require their secret (401 otherwise).
 
 **Next:** Phase 6 — Measurement (Pixel + CAPI sharing one event_id, capiQueue + retry cron, attribution persistence #8, meta/meta.bn/google feeds, GA4). Fires Purchase at confirmation (#9). Needs Meta Business Manager + Pixel + CAPI dataset.
+
+---
+
+## 2026-07-15 · Phase 6 · Measurement
+
+Server-side is the source of truth: the Pixel is a hint, CAPI is the record. Both carry **one `event_id`** (= `orderNumber`) so Meta dedups them (§13.3). `meta.bn.xml` is voided by the English-only override — only meta.xml + google.xml ship.
+
+**Shipped:**
+- **Catalog feeds** `/api/feed/meta.xml` + `/api/feed/google.xml` (RSS 2.0 + `g:` namespace, ISR 6h). **`<g:id>` === SKU (#1)** — one row per active variant, price `${n.toFixed(2)} BDT`, XML-escaped; `sku_margin_band` from min landed cost (staff signal, coarse). Unit-tested (acceptance #19).
+- **Meta CAPI lib** (`integrations/meta/`): `hash.ts` SHA-256 of trim+lowercase (phone → E.164 no `+`); **fbp/fbc/ip/ua passed RAW, never hashed** — unit-tested against `crypto`. `events.ts` `buildFbc = fb.1.{ms}.{fbclid}`, `content_ids === SKU`, `content_type 'product'`. `capi.ts` posts to the Graph API; `test_event_code` only when `NODE_ENV !== 'production'` (#22); no creds → `{ok:false}` (no throw).
+- **`capiQueue` collection + `tracking.ts`**: **Purchase enqueued at confirmation (#9)** — COD (placeOrder) + prepay (epsCallback SUCCESS); `order_delivered` at delivery (fulfilment) with the true value (the Purchase↔delivered gap = the RTO rate, §13.4). **user_data (fbp/fbc) read from `order.attribution`, not cookies (#8).** Enqueue is idempotent on `eventId+eventName`.
+- **`/api/cron/capi-drain`** (every min, CRON_SECRET header + `safeEqual`): drains pending, exponential backoff `min(3600, 2^attempts·60)`, `failed` at 6 attempts, alerts on depth > 50.
+- **`/api/cron/sku-parity`** (daily 03:00): every feed `id` must be a live active SKU — `mismatches` surfaces drift (#1 monitoring).
+- **Pixel + GA4** (`Analytics.tsx`, direct `fbq`/`gtag`, no tag manager §13.8) in the storefront layout; **`proxy.ts`** (Next 16's renamed middleware) captures `fbclid` → HttpOnly `dkb_fbc` cookie at landing; `/api/checkout/place` threads `_fbp`/`dkb_fbc`/`fbclid` into `order.attribution` (#8 persistence).
+
+**Decisions:**
+- **`proxy.ts`, not `middleware.ts`** — Next 16.2.6 deprecates the `middleware` file convention; adopted the current name to build without the deprecation warning.
+- Feeds are **anonymous ISR** (no auth) — they're public product data by design (Meta/Google crawl them); COGS never appears, `sku_margin_band` is a coarse band only.
+- Pixel/GA4/CAPI all **creds-gated**: absent env → the snippet simply doesn't render / CAPI returns `{ok:false}`. Nothing fires without the owner's assets.
+- Removed a Phase-1 throwaway (`scripts/count.ts`).
+
+**Non-negotiables touched:** **#1** (`<g:id>` === SKU, + a daily parity cron), **#8** (fbp/fbc from the DB, never cookies, at send time), **#9** (Purchase fires at confirmation, one event_id = orderNumber), **#22** (test_event_code dev-only).
+
+**Open — needs you (all creds-gated; built + unit-tested without them):**
+- **Meta assets** — `NEXT_PUBLIC_META_PIXEL_ID`, `META_CAPI_DATASET_ID` + `META_CAPI_ACCESS_TOKEN`, catalog ID (to ingest the feeds). Without them the Pixel/CAPI don't fire and dedup can't be proven live.
+- **`NEXT_PUBLIC_GA4_ID`** — GA4 is off until set.
+- **`CRON_SECRET`** on Vercel (shared by all three crons).
+
+**Verified (creds-independent):** typecheck, **70 tests** (+11: feed `<g:id>`/price/escaping, CAPI hashing + raw fbp/fbc + fbc format + content_ids), lint (0 errors), build (feeds ISR 6h, crons + proxy registered, no deprecation warnings).
+
+**Next:** Phase 7 — Accounting (double-entry journals #5, delivery journal fires from `markDelivered`, pre-order liability to 2030 #6, landed-cost COGS, balanced-books assertion). No new creds.
