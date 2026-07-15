@@ -21,7 +21,8 @@ export async function POST(req: NextRequest) {
   }
 
   // Guest checkout: phone comes from the OTP-verified cookie, never the client (§17.1).
-  const verified = verifyPhoneToken((await cookies()).get('dkb_phone')?.value)
+  const jar = await cookies()
+  const verified = verifyPhoneToken(jar.get('dkb_phone')?.value)
   if (!verified) return NextResponse.json({ ok: false, error: 'Verify your phone first.' }, { status: 401 })
 
   if (!body.name || !body.address || !body.zone || !ZONES.includes(body.zone)) {
@@ -45,7 +46,14 @@ export async function POST(req: NextRequest) {
       channel: 'web',
       ipAddress: ip,
       inAppBrowser: inApp,
-      attribution: { clientIp: ip, userAgent: ua ?? undefined },
+      // fbp/fbc captured at landing → persisted on the order; Purchase reads this, not cookies (#8).
+      attribution: {
+        clientIp: ip,
+        userAgent: ua ?? undefined,
+        fbp: jar.get('_fbp')?.value,
+        fbc: jar.get('dkb_fbc')?.value ?? jar.get('_fbc')?.value,
+        fbclid: jar.get('dkb_fbclid')?.value,
+      },
     })
   } catch (err) {
     return NextResponse.json({ ok: false, error: err instanceof Error ? err.message : 'Could not place order.' }, { status: 400 })

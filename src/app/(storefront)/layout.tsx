@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 
 import { SiteHeader } from '@/components/SiteHeader'
 import { SiteFooter } from '@/components/SiteFooter'
+import { Analytics } from '@/components/Analytics'
 import { anekLatin, martianMono } from './fonts'
 import './globals.css'
 
@@ -20,6 +21,7 @@ export default async function StorefrontLayout({ children }: { children: React.R
   return (
     <html lang="en" className={`${anekLatin.variable} ${martianMono.variable}`}>
       <body className="flex min-h-[100dvh] flex-col">
+        <Analytics />
         <SiteHeader />
         <main className="flex-1">{children}</main>
         <SiteFooter />
