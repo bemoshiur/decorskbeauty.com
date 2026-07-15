@@ -122,3 +122,32 @@ Append-only build log. Newest at the bottom. Format per CLAUDE.md.
 **Verified:** typecheck, **34 tests** (incl. 18 §1.1 branches), lint (0 errors, boundary holds), build, OTP round-trip (request → wrong → correct → cookie → rate-limit 429), checkout renders.
 
 **Next:** Phase 4 — Payments. **Read the `eps-payment-gateway` skill first — do not write EPS from memory.** EPS hosted checkout (GetToken → InitializeEPS → verify via API No.3), `transactions`, idempotent success handler, COD path, in-app-browser interstitial + resume token, and order placement + stock reservation (§10.1).
+
+---
+
+## 2026-07-15 · Phase 4 · Payments
+
+Read the `eps-payment-gateway` skill first (on disk under the skills-plugin cache — not registered with the Skill tool, but its `scripts/nextjs/` is what CLAUDE.md points to). Followed it exactly.
+
+**Shipped:**
+- **EPS client** (`src/lib/integrations/eps/client.ts`) per the skill: HMAC-SHA512 `x-hash` with the **per-endpoint** input, token cache, GetToken → InitializeEPS → CheckMerchantTransactionStatus, `normalizeStatus` (all documented + observed aliases), `TXN-<ms>-<hex>` ids. Unit-tested.
+- **`orders`** (`DKB-YYMM-#####`, price/cost snapshots, courier/attribution/timeline groups), **`customers`** (phone identity), **`transactions`** (`merchantTransactionId` = idempotency key) collections (§4.3).
+- **Order placement** (`lib/commerce/placeOrder`): terms → find/create customer → snapshot items → **FEFO-reserve** ready stock via `reserve` movements (#4) → COD confirm or stage an EPS transaction. `codAmount = grandTotal − advance` (#2).
+- **EPS routes** per skill: `/api/checkout/place` (COD / EPS / in-app interstitial) + `/api/payments/eps/{checkout,success,fail,cancel}`. The callback **always verifies via API No.3, never the query params (#7)**, is **idempotent** on the transaction (§8.3), verifies the amount, and releases reservations on fail/cancel.
+- **FB in-app-browser guard** (§13.5): detection, signed **resume token**, interstitial (`intent://` Android / `x-safari-` iOS), and `/checkout/pay/[token]` that **rehydrates from the token + DB, never cookies**. Unit-tested.
+- The one-page checkout now places orders (guest, OTP-gated).
+
+**Decisions:**
+- The **Purchase** event (Phase 6) and **balanced journals** (Phase 7) hook into the confirmation point but aren't fired yet.
+- Reservation-expiry cron (§10.1, pending > 60 min) deferred to the cron work; explicit fail/cancel releases immediately.
+- Refunds aren't in EPS V5 (skill) → merchant dashboard + a manual journal (Phase 7).
+
+**Non-negotiables touched:** **#2** (codAmount = amount_to_collect, never grandTotal — tested), **#4** (availableQty only via movements — reserve tested), **#7** (verify via API No.3, never redirect params — enforced in the callback), **#9** (the confirmation point where Purchase will fire is set).
+
+**Open — needs you (the two Phase 4 gates I cannot close myself):**
+- **EPS credentials** (`EPS_MERCHANT_ID/STORE_ID/USERNAME/PASSWORD/HASH_KEY`) — sandbox for dev, Decor's own for prod. Without them a live payment can't complete; everything else is built and tested. The x-hash is only provable against the live API (skill: "no offline test vector").
+- **A real Android phone in the real Facebook app** (§13.5 / acceptance #16) — I can't test on a device. The webview flow is built; it needs a human to sign off.
+
+**Verified (creds-independent):** typecheck, **49 tests** (EPS aliases/hash/mtxn, in-app detection + resume token, COD order + FEFO reservation + outside-advance + pending txn), lint (0 errors), build; routes respond correctly (callback rejects a missing txn id → result error; place is 401 without OTP; pay rejects a bad token).
+
+**Next:** Phase 5 — Fulfilment (order board, fraud check, Pathao push + Steadfast fallback, webhooks + 30-min reconciling cron, invoice + label PDF). Asserts `amount_to_collect === codAmount` (#2). Needs Pathao + Steadfast creds.
