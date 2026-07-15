@@ -34,3 +34,33 @@ Append-only build log. Newest at the bottom. Format per CLAUDE.md.
 **Non-negotiables touched:** #10 and #11 (see the i18n decision above — explicit, owner-approved).
 
 **Next:** Phase 1 — Catalog (brands, categories, products, variants, ingredients, media pipeline §15.4, ISR + revalidateTag), enter the launch SKUs, PDP + PLP. New session (one phase per session).
+
+---
+
+## 2026-07-15 · Phase 1 · Catalog
+
+**Shipped:**
+- Five catalog collections (§4.1, English-only): `brands`, `categories`, `ingredients`, `products` (drafts), `variants`. `variants.sku` indexed + unique.
+- Media pipeline (§15.4): on-upload responsive **AVIF+WebP at 400/800/1200** (one transform per image) + base64 blur placeholder.
+- `lib/commerce` cached data-access (`unstable_cache` + catalog tags + 5-min TTL) with afterChange/afterDelete revalidation; storefront reads ONLY through it (§3, lint-enforced).
+- PDP (`/products/[slug]`, §6.1 order) + home PLP grid + the **authenticity slip**, `ResponsiveImage` (pre-gen set, priority hero, blur), Martian Mono prices, seal stamp motion.
+- Seeded the launch catalog: **9 brands, 6 categories, 10 ingredients, 12 products + 12 variants + 12 images.**
+
+**Decisions:**
+- **12 real SKUs** (the owner's brief), not the spec's "50" estimate; architecture still holds 1,500.
+- SKU = brand-abbrev + merchant code (e.g. `CRX-921`); merchant code also stored as `barcode`. Shelf prices taken from the product photos.
+- Product #10 is **RYO** (per packaging), not "RAY" (brief typo).
+- Authenticity slip shows the **honest promise** until Phase 2 lot data — never a fabricated batch code.
+- **`experimental.inlineCss`** (Next) removes the render-blocking CSS round-trip so the web-font text LCP element paints fast on throttled 4G. Cut LCP from ~2.6s → ~1.3s.
+- Category route `/c/[...category]`, search (§6.4), routine builder (§6.3), reviews — deferred; the home grid serves as the PLP for now (categories are seeded + assigned).
+
+**Non-negotiables touched:** #1 (`variants.sku` established as the indexed/unique identity spine), #13 (storefront reads only via `lib/commerce`, enforced by ESLint), #10 (titles English).
+
+**Open:**
+- Product photos have a **purple studio background** (§15.4 wants white/consistent) — usable now; better shots recommended before scaling the catalog.
+- The dedicated category PLP route + filters (§6.5), search, routine builder, reviews remain for later.
+- CI still needs `DATABASE_URL` + `PAYLOAD_SECRET` secrets (from Phase 0) or it stays red at the test step.
+
+**Verified:** `typecheck`, `test` (Neon), `build` (17 pages prerendered incl. 12 PDPs), `lint` (0 errors), Lighthouse — home + PDP **LCP ~1.3s, CLS 0, perf ~1.0** (devtools throttling).
+
+**Next:** Phase 2 — Inventory (suppliers, POs, landed cost, `stockLots`, `stockMovements`, FEFO allocator, expiry policy) and wire the authenticity slip + PDP EXP to the real FEFO lot, plus `/verify`.
