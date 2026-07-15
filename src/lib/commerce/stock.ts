@@ -8,11 +8,11 @@ const relId = (rel: unknown): number | null =>
  * `confirmed`) created before `cutoffIso`, and return their reserved stock (#4, acceptance #11).
  * Retires any still-pending transaction. Idempotent per order via releaseOrderReservations.
  */
-export async function cancelStaleOrders(payload: Payload, cutoffIso: string): Promise<{ scanned: number; released: number }> {
+export async function cancelStaleOrders(payload: Payload, cutoffIso: string, limit = 500): Promise<{ scanned: number; released: number }> {
   const { docs } = await payload.find({
     collection: 'orders',
     where: { and: [{ fulfilmentStatus: { equals: 'pending' } }, { createdAt: { less_than: cutoffIso } }] },
-    limit: 500,
+    limit,
     depth: 0,
     overrideAccess: true,
   })

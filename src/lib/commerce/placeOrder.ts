@@ -4,6 +4,7 @@ import { allocateFefo, type AllocatableLot, type LotStatus } from '@/lib/invento
 import { generateMerchantTransactionId } from '@/lib/integrations/eps/client'
 import { computeCheckoutTerms, type Zone } from './checkout'
 import { effectivePrice } from './products'
+import { cancelStaleOrders } from './stock'
 import { enqueuePurchase } from './tracking'
 
 export type PlaceOrderInput = {
@@ -87,6 +88,15 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
       overrideAccess: true,
       data: { phone: input.customer.phone, name: input.customer.name, email: input.customer.email },
     }))
+
+  // Opportunistic reservation sweep (bounded): free stock held by orders abandoned >60min ago
+  // BEFORE we allocate, so a once-daily release-stale cron (Vercel Hobby limit) can't let held
+  // reservations starve real buyers. Best-effort — never blocks the sale.
+  try {
+    await cancelStaleOrders(payload, new Date(Date.now() - 60 * 60_000).toISOString(), 25)
+  } catch {
+    /* sweeping is a best-effort optimization, not a precondition for placing an order */
+  }
 
   // 5. FEFO allocation for ready-stock lines (pre-order lines hold no stock).
   const now = Date.now()
