@@ -212,3 +212,37 @@ Server-side is the source of truth: the Pixel is a hint, CAPI is the record. Bot
 **Verified (creds-independent):** typecheck, **70 tests** (+11: feed `<g:id>`/price/escaping, CAPI hashing + raw fbp/fbc + fbc format + content_ids), lint (0 errors), build (feeds ISR 6h, crons + proxy registered, no deprecation warnings).
 
 **Next:** Phase 7 — Accounting (double-entry journals #5, delivery journal fires from `markDelivered`, pre-order liability to 2030 #6, landed-cost COGS, balanced-books assertion). No new creds.
+
+---
+
+## 2026-07-15 · Phase 7 · Accounting
+
+Full double-entry (§12). Every financial event posts a **balanced** journal (#5); pre-order/prepaid money is a **liability (2030)** released to income **at delivery** (#6).
+
+**Decision asked (spec self-conflict):** §12.3 books the sale at ship + reverses on RTO; §9.4 says "post the delivery journal on delivered." Owner chose **delivery-time recognition** ([[revenue-recognition-delivered]]). So `markDelivered` posts the sale + COGS; an in-transit RTO reverses nothing (no revenue was recognized); a post-delivery customer return reverses it.
+
+**Shipped:**
+- **Chart of accounts (§12.1)** — `accounts` collection + `lib/accounting/accounts.ts` (`CHART`/`ACCT`, idempotent `ensureAccounts`, code→id resolver). Codes are permanent — a beforeChange guard blocks renumbering. Seed: `pnpm payload run scripts/seed-accounts.ts` (28 accounts).
+- **Posting rules (§12.3)** — `lib/accounting/postings.ts`, one pure fn per event (PO-receive, advance-received, sale, COGS, customer-return, courier-remit, EPS-settle, RTO-fee, write-off, ad-spend), each returning a balanced `PostingLine[]`. Unit-tested for balance + correct accounts.
+- **Journal writer** — `postJournal.ts`: validates balance before any write (#5), resolves codes, auto-opens/rejects a closed `fiscalPeriod` (§12.6), creates draft → lines → posts. Idempotent per `(source,sourceId,ref)`.
+- **Collections** — `journalEntries` (+ `enforceJournalBalance` beforeChange: Σdr===Σcr on the posted transition + closed-period reject; beforeDelete blocks deleting a posted entry), `journalLines` (per-leg one-side rule + **posted-entry legs are immutable**), `fiscalPeriods`, `courierPayouts`, `epsSettlements`, and the `settings` global (`vatRatePercent` **0** + banner until the consultant confirms, §12.4/§21).
+- **Wiring (#5)** — PO receive → Dr 1050 / Cr 2010 (ties GL to Σ lot landed cost); EPS success → Dr 1030 / Cr 2030 (advance, #6); `markDelivered` → sale (release 2030 + book 1040 → 4010/4020/2020) + COGS (5010 ← 1050); customer return → 4040/1050 ← 1020/5010.
+- **Trial balance** (`trialBalance.ts`, §12.6) + int test asserting Σdebits === Σcredits across the lifecycle.
+
+**Adversarial verification** (6-lens finder → 2-skeptic refute, 18 agents) surfaced **4 real bugs, all fixed + regression-tested**:
+1. **Discount double-count** — `order.subtotal` is net-of-discount, so booking net to 4010 *and* debiting 4030 unbalanced the sale by `discountTotal` (latent, #5). Now 4010 is booked GROSS and 4030 nets it down.
+2. **Race double-post** — find-then-create had no DB uniqueness; an EPS reload / webhook-vs-cron could double-post. Added a **unique index on `(source,sourceId,ref)`** + the writer catches the race and returns the winner.
+3. **Write-then-post ordering** — order/txn state was committed before the journal, so a failed post was orphaned (and left 2030 negative). Journals now post **before** the idempotency-gating state in `markDelivered` + `epsCallback`.
+4. **Balance-guard bypass (critical)** — editing a *posted* entry's `journalLines` never re-ran the guard. Posted-entry legs are now **immutable** (beforeChange + beforeDelete); corrections go via void + repost.
+
+**Non-negotiables touched:** **#5** (every event a balanced journal; unbalanced can't reach the DB via the writer, the entry hook, OR line edits), **#6** (advance/prepay → 2030 on receipt, released to 4010 only at delivery — later than #6's literal "on ship", strictly more conservative; flagged for the owner in case pre-orders must release at ship).
+
+**Decisions / deferrals:**
+- Prod **migration** for the new tables + chart seed must be generated at deploy (`pnpm migrate:create`) — the repo still runs on dev push (no migrations dir yet, all phases). Flagged.
+- **Reconciliation UI (§12.5)** (statement upload/match) and the **period-close report CSVs / P&L / balance sheet (§12.6)** are deferred — the collections + posting fns exist so they plug in.
+- Pre-order **COGS = 0** until pre-order stock allocation is built (ready-stock COGS is correct). Invoice PDF (§12.4/§11.2) still deferred.
+- Latent Phase-4 note: `order.codAmount` is stale for an epsFull ready-prepay order; the sale journal sidesteps it by using `grandTotal − advancePaid`. Flagged for a Phase-4 fix.
+
+**Verified:** typecheck, **95 tests** (+25: 14 posting-rule balances + validateBalance + 7 lifecycle int incl. trial-balance-ties, closed-period reject, posted-line immutability), lint (0 errors), build.
+
+**Next:** Phase 8 — Reports/back-office (§11.6 CSV reports, RTO analytics, reconciliation UI, period close) or as Moshiur directs. No new creds.
