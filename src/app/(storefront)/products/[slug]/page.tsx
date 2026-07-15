@@ -4,8 +4,7 @@ import type { Metadata } from 'next'
 import { RichText } from '@payloadcms/richtext-lexical/react'
 
 import type { Ingredient, Media } from '@/payload-types'
-import { getProductBySlug, getActiveVariants, getPublishedProductSlugs, getFefoLotForVariant, getRelatedProducts, effectivePrice } from '@/lib/commerce'
-import { AuthenticitySlip } from '@/components/AuthenticitySlip'
+import { getProductBySlug, getActiveVariants, getPublishedProductSlugs, getRelatedProducts, effectivePrice } from '@/lib/commerce'
 import { Gallery } from '@/components/commerce/gallery'
 import { ProductActions } from '@/components/commerce/product-actions'
 import { GridTileImage, productImage } from '@/components/commerce/product-elements'
@@ -48,7 +47,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const related = await getRelatedProducts(product.id, 8)
   const brand = product.brand && typeof product.brand === 'object' ? product.brand : null
   const cheapest = variants[0]
-  const fefoLot = cheapest ? await getFefoLotForVariant(cheapest.id) : null
   const preorder = product.fulfilmentMode === 'preOrder'
   const ingredients = (product.keyIngredients ?? []).filter((i): i is Ingredient => typeof i === 'object')
 
@@ -91,13 +89,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
           {product.shortDescription && <p className="mt-4 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">{product.shortDescription}</p>}
 
-          {/* Authenticity slip — the K-Beauty signature, kept in a clean card */}
-          <div className="mt-6">
-            <AuthenticitySlip
-              lot={fefoLot ? { lotCode: fefoLot.lotCode, mfgDate: fefoLot.mfgDate, expDate: fefoLot.expDate, importDate: fefoLot.importDate, poRef: fefoLot.poRef } : undefined}
-              verifyHref={fefoLot ? `/verify?code=${encodeURIComponent(fefoLot.lotCode)}` : undefined}
-            />
-          </div>
+          {/* Authenticity assurance only — no internal lot/import data shown publicly (owner request). */}
+          <p className="mt-6 rounded-lg border border-neutral-200 px-4 py-3 text-xs text-neutral-500 dark:border-neutral-800">
+            100% authentic · imported &amp; sealed. Check the batch code printed on your package to{' '}
+            <Link href="/verify" className="text-blue-600 hover:underline">verify authenticity</Link>.
+          </p>
         </div>
       </div>
 
