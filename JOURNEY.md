@@ -151,3 +151,33 @@ Read the `eps-payment-gateway` skill first (on disk under the skills-plugin cach
 **Verified (creds-independent):** typecheck, **49 tests** (EPS aliases/hash/mtxn, in-app detection + resume token, COD order + FEFO reservation + outside-advance + pending txn), lint (0 errors), build; routes respond correctly (callback rejects a missing txn id → result error; place is 401 without OTP; pay rejects a bad token).
 
 **Next:** Phase 5 — Fulfilment (order board, fraud check, Pathao push + Steadfast fallback, webhooks + 30-min reconciling cron, invoice + label PDF). Asserts `amount_to_collect === codAmount` (#2). Needs Pathao + Steadfast creds.
+
+---
+
+## 2026-07-15 · Phase 5 · Fulfilment
+
+Owner supplied the Pathao repo (enuenan/pathao-courier) + Steadfast docs mid-phase — confirmed my Aladdin v1 endpoints/fields and the Steadfast shape (§9.2).
+
+**Shipped:**
+- **Courier payload builders** (Pathao/Steadfast): `amount_to_collect` / `cod_amount` === `codAmount`, **NEVER grandTotal (#2)** — unit-tested (acceptance #2).
+- **Pathao + Steadfast clients** (Aladdin v1 issue-token / orders / order-info / user-success; Steadfast create_order / status_by_cid).
+- **Push service**: Pathao primary → **Steadfast fallback** (2× 5xx or no area id), a #2 runtime guard, timeline log, ships the reserved stock.
+- **Fraud check** (§7.1/§9.3): interface + pathao(success-rate) / fraudbd / null, decision policy (pure, tested), **2.5s soft timeout → review**, never blocks a sale.
+- **Fulfilment status-sync**: handedToCourier (ship movements), delivered (deliveredCount + LTV), returned/RTO (**returnRestock to the ORIGINAL lot at original landed cost, #12**, cancelledCount). `returns` collection.
+- **Webhooks** (`/api/courier/{pathao,steadfast}`, secret-required) + **30-min reconciling cron** (`/api/cron/courier-sync`, CRON_SECRET) + `vercel.json`.
+
+**Decisions:**
+- Pathao token cached in-process (Neon persistence + cron refresh is the §9.1 production path — noted).
+- **Order board = the Payload Orders list** (filterable by fulfilmentStatus). The Kanban visual + custom bulk actions (§11.1) and the **invoice/label PDF (§11.2) are DEFERRED** (a big UI/PDF chunk; the done-criterion #2 is met + tested).
+- Delivery journal (Phase 7) + `order_delivered` event (Phase 6) hook into `markDelivered` but aren't fired.
+- Steadfast has no clean fraud API — Pathao success-rate is the source (didn't scrape the panel, §9.3).
+
+**Non-negotiables touched:** **#2** (amount_to_collect === codAmount — unit-tested, acceptance #2), **#4** (ship/return via movements), **#12-adjacent** (restock to the original lot at original landed cost — integration-tested).
+
+**Open — needs you:**
+- **Pathao + Steadfast credentials** (client_id/secret/username/password/store_id; Api-Key/Secret-Key + webhook token) — no live courier round-trip without them; the mapping + fallback + status logic is built and tested.
+- **Invoice + label PDF (§11.2)** and the **Kanban board + custom bulk actions (§11.1)** — deferred.
+
+**Verified:** typecheck, **59 tests** (courier #2 + weight + status-normalize, fraud policy, **RTO restock #12 end-to-end**), lint (0 errors), build; webhooks require their secret (401 otherwise).
+
+**Next:** Phase 6 — Measurement (Pixel + CAPI sharing one event_id, capiQueue + retry cron, attribution persistence #8, meta/meta.bn/google feeds, GA4). Fires Purchase at confirmation (#9). Needs Meta Business Manager + Pixel + CAPI dataset.
