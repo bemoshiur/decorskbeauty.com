@@ -1,6 +1,8 @@
 import React from 'react'
 import type { Metadata } from 'next'
 
+import { SiteHeader } from '@/components/SiteHeader'
+import { SiteFooter } from '@/components/SiteFooter'
 import { anekLatin, martianMono } from './fonts'
 import './globals.css'
 
@@ -17,8 +19,10 @@ export const metadata: Metadata = {
 export default async function StorefrontLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${anekLatin.variable} ${martianMono.variable}`}>
-      <body>
-        <main>{children}</main>
+      <body className="flex min-h-[100dvh] flex-col">
+        <SiteHeader />
+        <main className="flex-1">{children}</main>
+        <SiteFooter />
       </body>
     </html>
   )

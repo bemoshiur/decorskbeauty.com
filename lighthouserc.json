@@ -4,8 +4,11 @@
       "startServerCommand": "pnpm start",
       "startServerReadyPattern": "Ready in|Local:|started server on",
       "startServerReadyTimeout": 60000,
-      "url": ["http://localhost:3000/"],
-      "numberOfRuns": 3,
+      "url": [
+        "http://localhost:3000/",
+        "http://localhost:3000/products/advanced-snail-96-mucin-power-essence"
+      ],
+      "numberOfRuns": 2,
       "settings": {
         "throttlingMethod": "devtools"
       }
