@@ -3,6 +3,7 @@ import type { Payload } from 'payload'
 
 import { getPayloadClient } from '@/lib/payload'
 import { verifyPayment, normalizeStatus } from '@/lib/integrations/eps/client'
+import { postJournal, postAdvanceReceived } from '@/lib/accounting'
 import { enqueuePurchase } from './tracking'
 
 const relId = (rel: unknown): number | null =>
@@ -79,6 +80,20 @@ export async function handleEpsCallback(req: NextRequest) {
       console.error('[EPS] AMOUNT MISMATCH', mtxn)
       return result(req, 'error', order?.orderNumber ?? undefined)
     }
+    // Money in before goods reach the customer is a LIABILITY (2030), not revenue (#5/#6, §12.3).
+    // Post it BEFORE marking the txn success / setting advancePaid: the txn-success guard above
+    // suppresses retries, so if this failed after that write the advance would never reach 2030 (a #6
+    // hole) while the later delivery still debits 2030 by advancePaid → negative liability. Post first,
+    // idempotent per transaction; a failed post leaves the txn 'pending' so a reload re-posts.
+    if (orderId && txn.amount && txn.amount > 0) {
+      await postJournal(payload, {
+        source: 'order',
+        sourceId: String(orderId),
+        ref: `advance-${txn.merchantTransactionId}`,
+        memo: `EPS ${txn.purpose} ৳${txn.amount} received — order ${order?.orderNumber ?? orderId}`,
+        lines: postAdvanceReceived({ amount: txn.amount, orderRef: order?.orderNumber ?? String(orderId) }),
+      })
+    }
     await payload.update({
       collection: 'transactions',
       id: txn.id,
@@ -98,7 +113,7 @@ export async function handleEpsCallback(req: NextRequest) {
         },
       })
     }
-    // Purchase fires at confirmation (#9, §13.4); balanced journal → Phase 7.
+    // Purchase fires at confirmation (#9, §13.4).
     if (orderId) await enqueuePurchase(payload, orderId)
     return result(req, 'success', order?.orderNumber ?? undefined)
   }

@@ -2,7 +2,8 @@ import { randomBytes } from 'crypto'
 
 import type { CollectionAfterChangeHook } from 'payload'
 
-import { computeLandedCosts, type AllocationBasis, type POLineInput } from '@/lib/inventory/landedCost'
+import { computeLandedCosts, round2, type AllocationBasis, type POLineInput } from '@/lib/inventory/landedCost'
+import { postJournal, postPoReceived } from '@/lib/accounting'
 
 const idOf = (rel: unknown): number | null =>
   rel == null ? null : typeof rel === 'object' ? ((rel as { id?: number }).id ?? null) : (rel as number)
@@ -65,6 +66,7 @@ export const receivePurchaseOrder: CollectionAfterChangeHook = async ({ doc, pre
   )
 
   const now = new Date().toISOString()
+  let inventoryTotal = 0
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i]
     const variantId = idOf(l.variant)
@@ -104,6 +106,29 @@ export const receivePurchaseOrder: CollectionAfterChangeHook = async ({ doc, pre
         at: now,
       },
     })
+
+    // GL inventory value must tie to the sub-ledger — use the exact per-unit cost that landed on the lot.
+    inventoryTotal += landed[i].landedCostPerUnit * l.qty
+  }
+
+  // Capitalize inventory against AP (§12.3 row 1, #5). Ties Dr 1050 to Σ(lot landed cost).
+  inventoryTotal = round2(inventoryTotal)
+  if (inventoryTotal > 0) {
+    const overheads = round2(
+      (doc.freightBDT ?? 0) + (doc.dutyBDT ?? 0) + (doc.vatAtImportBDT ?? 0) + (doc.clearingBDT ?? 0) + (doc.otherChargesBDT ?? 0),
+    )
+    await postJournal(
+      payload,
+      {
+        date: now,
+        source: 'purchaseOrder',
+        sourceId: String(doc.id),
+        ref: 'po-receive',
+        memo: `PO ${doc.poNumber} received — landed ${inventoryTotal} (overheads ${overheads} capitalized)`,
+        lines: postPoReceived({ landedTotal: inventoryTotal, poRef: String(doc.poNumber ?? doc.id) }),
+      },
+      req,
+    )
   }
 
   return doc
