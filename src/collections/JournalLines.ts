@@ -1,7 +1,7 @@
 import type { CollectionConfig, PayloadRequest } from 'payload'
 
 import { round2 } from '@/lib/inventory/landedCost'
-import { staffOnly } from './access/staff'
+import { accountingAccess } from '@/lib/auth/roles'
 
 const idOf = (rel: unknown): number | null => (rel == null ? null : typeof rel === 'object' ? ((rel as { id?: number }).id ?? null) : (rel as number))
 
@@ -24,7 +24,7 @@ async function assertParentNotPosted(entryRel: unknown, req: PayloadRequest) {
 export const JournalLines: CollectionConfig = {
   slug: 'journalLines',
   admin: { useAsTitle: 'id', group: 'Accounting', defaultColumns: ['entry', 'account', 'debit', 'credit'] },
-  access: { read: staffOnly, create: staffOnly, update: staffOnly, delete: staffOnly },
+  access: { read: accountingAccess, create: accountingAccess, update: accountingAccess, delete: accountingAccess },
   hooks: {
     beforeChange: [
       async ({ data, originalDoc, req }) => {

@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
+import { isStaff, costFieldRead } from '@/lib/auth/roles'
 import { assignOrderNumber } from './hooks/orderNumber'
 
 const opts = (...vals: string[]) => vals.map((v) => ({ label: v, value: v }))
@@ -11,6 +12,9 @@ export const Orders: CollectionConfig = {
     group: 'Orders',
     defaultColumns: ['orderNumber', 'phone', 'grandTotal', 'codAmount', 'paymentStatus', 'fulfilmentStatus'],
   },
+  // Customer PII + financials — staff only. Every legit write goes through lib/commerce with
+  // overrideAccess (placeOrder/fulfilment/epsCallback); the raw REST API is never public.
+  access: { read: isStaff, create: isStaff, update: isStaff, delete: isStaff },
   hooks: { beforeChange: [assignOrderNumber] },
   fields: [
     { name: 'orderNumber', type: 'text', unique: true, index: true, admin: { readOnly: true } },
@@ -36,7 +40,8 @@ export const Orders: CollectionConfig = {
           fields: [
             { name: 'lot', type: 'relationship', relationTo: 'stockLots' },
             { name: 'qty', type: 'number' },
-            { name: 'landedCostSnapshot', type: 'number' },
+            // COGS snapshot — hidden from packer/support (§4.6).
+            { name: 'landedCostSnapshot', type: 'number', access: { read: costFieldRead } },
           ],
         },
       ],

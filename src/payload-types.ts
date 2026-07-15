@@ -171,6 +171,10 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: number;
+  /**
+   * RBAC (§4.6). First user is owner; give real staff least-privilege roles. Only an owner can change roles. packer/support never see landed cost.
+   */
+  roles: ('owner' | 'manager' | 'inventory' | 'packer' | 'accounts' | 'support')[];
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -595,10 +599,14 @@ export interface StockLot {
   qtyDamaged?: number | null;
   purchaseOrder?: (number | null) | PurchaseOrder;
   /**
-   * Set at receive. Drives COGS. Hidden from packer/support in Phase 9 RBAC.
+   * Set at receive. Drives COGS. Hidden from packer/support (RBAC §4.6).
    */
   landedCostPerUnit?: number | null;
   receivedAt?: string | null;
+  /**
+   * 3–6 months to EXP — set by the daily expiry cron (§10.3). Badge + clearance band. <3mo is FEFO-skipped by date.
+   */
+  shortExpiry?: boolean | null;
   /**
    * Invoice, BL, customs release, brand authorization — surfaced on /verify.
    */
@@ -1215,6 +1223,7 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  roles?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -1501,6 +1510,7 @@ export interface StockLotsSelect<T extends boolean = true> {
   purchaseOrder?: T;
   landedCostPerUnit?: T;
   receivedAt?: T;
+  shortExpiry?: T;
   importDocs?:
     | T
     | {

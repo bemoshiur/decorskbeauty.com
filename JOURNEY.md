@@ -270,3 +270,26 @@ Corrected a mislabel: §19 Phase 8 is **SEO/AEO** (not "reports" — that stays 
 **Verified:** typecheck, **110 tests** (+15: Product/Offer sku+shipping+returns, no-rating, AggregateOffer range, pre-order/OOS availability, zero-variant null, FAQPage/ItemList/DefinedTerm, sitemap/robots), lint (0 errors), build.
 
 **Next:** Phase 9 — Hardening (rate limits, RBAC field-level audit — packer can't see landed cost, near-expiry cron, alerts, abandoned-cart release, backup/restore, load test). Plus the Phase-8 deferrals (blog, category/brand pages, redirects).
+
+---
+
+## 2026-07-15 · Phase 9 · Hardening
+
+**Shipped:**
+- **RBAC (§4.6, the done-criterion)** — `Users.roles` (owner/manager/inventory/packer/accounts/support) + `lib/auth/roles.ts` (canSeeCost/canAccounting/canInventory + field/collection access). **Landed cost hidden from packer/support** via field-level `read` access on `stockLots.landedCostPerUnit`, `orders.items[].lotAllocations[].landedCostSnapshot`, `purchaseOrders.lines[].unitCostForeign`; accounting collections → owner/manager/accounts only; suppliers/POs → inventory-only; orders locked to staff. **Proven by test** (packer read strips cost, owner sees it, packer denied the ledger). Field access only affects the admin API — storefront + internal reads use overrideAccess.
+- **Abandoned-order release cron** (acceptance #11) — `/api/cron/release-stale` + `cancelStaleOrders`: pending >60min → release reservations (#4) + cancel + retire pending txn. Tested (reservations returned).
+- **Near-expiry/expiry cron** (§10.3) — `/api/cron/expiry-scan` + `runExpiryScan`: past-EXP → `expired` + `expiryWriteoff` movement + **write-off journal (Dr 5020 / Cr 1050**, wiring Phase-7 `postWriteOff`, #5); 3–6mo → `shortExpiry` flag. <3mo already FEFO-skipped by date. Tested end-to-end.
+- **Alerts** (§11.5) — `lib/alerts` (Resend-if-configured-else-log, best-effort) wired into both crons.
+- **`docs/OPERATIONS.md`** — backup/restore drill (Neon PITR + pg_dump), load-test (k6), 2FA + cron-secret go-live gates.
+
+**Security-review finding fixed (CRITICAL privesc):** user management was any-authenticated → a packer could create users or edit their own `roles` to owner. Now **user management is owner-only** (§4.6: manager excludes user mgmt), the `roles` field is **owner-only to change**, and non-owners are scoped to their own account (self password/session only).
+
+**Adversarial RBAC sweep** (5 lenses → 2 skeptics, 19 agents): 7 candidate leak paths, **0 confirmed** — no packer-reachable path to landed cost/margin/COGS survived (feed emits only a coarse margin band; populated relationships strip cost; sensitive collections gated).
+
+**Non-negotiables touched:** **#4** (release/expiry via movements only), **#5** (expiry write-off posts a balanced journal). RBAC realizes §4.6's "field-level access matters here."
+
+**Verified:** typecheck, **114 tests** (+4: RBAC packer-can't-see-cost, abandoned release, expiry write-off, + owner-sees-cost), lint (0 errors), build (release-stale + expiry-scan crons registered).
+
+**Deferred/flagged:** 2FA enforcement (§17.2, documented), load-test/backup as operational procedures (docs), blog + category/brand pages + dead-SKU redirects (from Phase 8). Reports/reconciliation-UI/period-close (from Phase 7). LocalBusiness geo/hours.
+
+**Next:** storefront redesign inspired by ghorerbazar.com (owner request 2026-07-15) — conversion landing + on-page COD order form PDP + related products + login, mobile-first + WhatsApp-friendly. Brainstorming the design first.

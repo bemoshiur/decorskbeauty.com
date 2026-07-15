@@ -1,10 +1,12 @@
 import type { CollectionConfig } from 'payload'
 
+import { inventoryAccess, costFieldRead } from '@/lib/auth/roles'
 import { receivePurchaseOrder } from './hooks/receivePurchaseOrder'
 
 /**
  * The import (§4.2). On status → received, a hook computes landed cost and creates stockLots +
  * receipt movements. Long receives (>200 lines) belong in a cron route (§2.1) — not built yet.
+ * Buying data is inventory-role only (§4.6) — packer/support never see supplier costs.
  */
 export const PurchaseOrders: CollectionConfig = {
   slug: 'purchaseOrders',
@@ -13,6 +15,7 @@ export const PurchaseOrders: CollectionConfig = {
     group: 'Inventory',
     defaultColumns: ['poNumber', 'supplier', 'currency', 'status'],
   },
+  access: { read: inventoryAccess, create: inventoryAccess, update: inventoryAccess, delete: inventoryAccess },
   hooks: { afterChange: [receivePurchaseOrder] },
   fields: [
     { name: 'poNumber', type: 'text', required: true, index: true },
@@ -34,7 +37,7 @@ export const PurchaseOrders: CollectionConfig = {
       fields: [
         { name: 'variant', type: 'relationship', relationTo: 'variants', required: true },
         { name: 'qty', type: 'number', required: true },
-        { name: 'unitCostForeign', type: 'number', required: true },
+        { name: 'unitCostForeign', type: 'number', required: true, access: { read: costFieldRead } },
         { name: 'lotCode', type: 'text' },
         { name: 'mfgDate', type: 'date' },
         { name: 'expDate', type: 'date' },

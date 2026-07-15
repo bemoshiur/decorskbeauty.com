@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { staffOnly } from './access/staff'
+import { accountingAccess } from '@/lib/auth/roles'
 
 /**
  * Chart of accounts (§4.4 / §12.1). Seeded from lib/accounting/accounts.ts. Add freely, NEVER
@@ -10,7 +10,7 @@ import { staffOnly } from './access/staff'
 export const Accounts: CollectionConfig = {
   slug: 'accounts',
   admin: { useAsTitle: 'code', group: 'Accounting', defaultColumns: ['code', 'name', 'type', 'active'] },
-  access: { read: staffOnly, create: staffOnly, update: staffOnly, delete: staffOnly },
+  access: { read: accountingAccess, create: accountingAccess, update: accountingAccess, delete: accountingAccess },
   hooks: {
     beforeChange: [
       ({ data, originalDoc, operation }) => {

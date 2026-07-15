@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { staffOnly } from './access/staff'
+import { accountingAccess } from '@/lib/auth/roles'
 
 /**
  * Courier COD payout reconciliation (§4.4 / §12.5). Paste/upload the provider statement, match by
@@ -11,7 +11,7 @@ import { staffOnly } from './access/staff'
 export const CourierPayouts: CollectionConfig = {
   slug: 'courierPayouts',
   admin: { useAsTitle: 'id', group: 'Accounting', defaultColumns: ['provider', 'periodStart', 'periodEnd', 'netReceived', 'variance', 'status'] },
-  access: { read: staffOnly, create: staffOnly, update: staffOnly, delete: staffOnly },
+  access: { read: accountingAccess, create: accountingAccess, update: accountingAccess, delete: accountingAccess },
   fields: [
     { name: 'provider', type: 'select', options: ['pathao', 'steadfast'].map((v) => ({ label: v, value: v })) },
     { name: 'periodStart', type: 'date' },

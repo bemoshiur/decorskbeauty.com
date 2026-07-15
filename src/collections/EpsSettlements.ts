@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { staffOnly } from './access/staff'
+import { accountingAccess } from '@/lib/auth/roles'
 
 /**
  * EPS settlement reconciliation (§4.4 / §12.5). Match by merchant transaction ID, show variance,
@@ -10,7 +10,7 @@ import { staffOnly } from './access/staff'
 export const EpsSettlements: CollectionConfig = {
   slug: 'epsSettlements',
   admin: { useAsTitle: 'id', group: 'Accounting', defaultColumns: ['periodStart', 'periodEnd', 'netReceived', 'variance', 'status'] },
-  access: { read: staffOnly, create: staffOnly, update: staffOnly, delete: staffOnly },
+  access: { read: accountingAccess, create: accountingAccess, update: accountingAccess, delete: accountingAccess },
   fields: [
     { name: 'periodStart', type: 'date' },
     { name: 'periodEnd', type: 'date' },

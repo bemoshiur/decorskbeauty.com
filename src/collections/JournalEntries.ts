@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { staffOnly } from './access/staff'
+import { accountingAccess } from '@/lib/auth/roles'
 import { enforceJournalBalance } from './hooks/enforceJournalBalance'
 
 const opts = (...vals: string[]) => vals.map((v) => ({ label: v, value: v }))
@@ -13,7 +13,7 @@ const opts = (...vals: string[]) => vals.map((v) => ({ label: v, value: v }))
 export const JournalEntries: CollectionConfig = {
   slug: 'journalEntries',
   admin: { useAsTitle: 'ref', group: 'Accounting', defaultColumns: ['date', 'source', 'ref', 'status', 'memo'] },
-  access: { read: staffOnly, create: staffOnly, update: staffOnly, delete: staffOnly },
+  access: { read: accountingAccess, create: accountingAccess, update: accountingAccess, delete: accountingAccess },
   // Hard idempotency: one entry per (source, sourceId, ref). The writer's find-then-create is not
   // atomic — under an EPS reload or a webhook racing the reconciling cron, two writers can both pass
   // the find. This unique constraint makes the loser's INSERT fail instead of double-posting the ledger.

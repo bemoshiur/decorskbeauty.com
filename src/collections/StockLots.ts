@@ -1,5 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
+import { costFieldRead } from '@/lib/auth/roles'
+
 /**
  * The batch — the authenticity spine (§4.2). Powers the PDP EXP, the authenticity slip and /verify.
  * Quantities are read-only: maintained only by the stock-movement hook (non-negotiable #4).
@@ -28,9 +30,18 @@ export const StockLots: CollectionConfig = {
     {
       name: 'landedCostPerUnit',
       type: 'number',
-      admin: { readOnly: true, description: 'Set at receive. Drives COGS. Hidden from packer/support in Phase 9 RBAC.' },
+      // COGS — invisible to packer/support (§4.6). Field-level, so the admin API strips it; the
+      // storefront + internal services read with overrideAccess and are unaffected.
+      access: { read: costFieldRead },
+      admin: { readOnly: true, description: 'Set at receive. Drives COGS. Hidden from packer/support (RBAC §4.6).' },
     },
     { name: 'receivedAt', type: 'date' },
+    {
+      name: 'shortExpiry',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: { readOnly: true, description: '3–6 months to EXP — set by the daily expiry cron (§10.3). Badge + clearance band. <3mo is FEFO-skipped by date.' },
+    },
     {
       name: 'importDocs',
       type: 'array',

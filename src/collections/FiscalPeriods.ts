@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { staffOnly } from './access/staff'
+import { accountingAccess } from '@/lib/auth/roles'
 
 /**
  * Monthly fiscal period (§4.4 / §12.6). Posting into a closed month is rejected (enforced in the
@@ -10,7 +10,7 @@ import { staffOnly } from './access/staff'
 export const FiscalPeriods: CollectionConfig = {
   slug: 'fiscalPeriods',
   admin: { useAsTitle: 'month', group: 'Accounting', defaultColumns: ['month', 'status', 'closedAt'] },
-  access: { read: staffOnly, create: staffOnly, update: staffOnly, delete: staffOnly },
+  access: { read: accountingAccess, create: accountingAccess, update: accountingAccess, delete: accountingAccess },
   fields: [
     { name: 'month', type: 'text', required: true, unique: true, index: true, admin: { description: 'YYYY-MM.' } },
     { name: 'status', type: 'select', defaultValue: 'open', options: ['open', 'closed'].map((v) => ({ label: v, value: v })) },

@@ -1,9 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import type { Payload } from 'payload'
 
 import { getPayloadClient } from '@/lib/payload'
 import { verifyPayment, normalizeStatus } from '@/lib/integrations/eps/client'
 import { postJournal, postAdvanceReceived } from '@/lib/accounting'
+import { releaseOrderReservations } from './stock'
 import { enqueuePurchase } from './tracking'
 
 const relId = (rel: unknown): number | null =>
@@ -12,31 +12,6 @@ const relId = (rel: unknown): number | null =>
 const site = (req: NextRequest) => process.env.NEXT_PUBLIC_SITE_URL || req.nextUrl.origin
 const result = (req: NextRequest, status: string, order?: string) =>
   NextResponse.redirect(new URL(`/checkout/result?status=${status}${order ? `&order=${encodeURIComponent(order)}` : ''}`, site(req)))
-
-/** Return reserved units to available (release movements), once. */
-async function releaseReservations(payload: Payload, orderId: number) {
-  const already = await payload.find({
-    collection: 'stockMovements',
-    where: { refType: { equals: 'order' }, refId: { equals: String(orderId) }, type: { equals: 'release' } },
-    limit: 1,
-    overrideAccess: true,
-  })
-  if (already.docs.length) return // idempotent
-  const order = await payload.findByID({ collection: 'orders', id: orderId, depth: 0, overrideAccess: true })
-  for (const item of order.items ?? []) {
-    for (const alloc of item.lotAllocations ?? []) {
-      const lotId = relId(alloc.lot)
-      const variantId = relId(item.variant)
-      if (lotId && variantId && alloc.qty) {
-        await payload.create({
-          collection: 'stockMovements',
-          overrideAccess: true,
-          data: { lot: lotId, variant: variantId, qty: alloc.qty, type: 'release', refType: 'order', refId: String(orderId), at: new Date().toISOString() },
-        })
-      }
-    }
-  }
-}
 
 /**
  * Shared success/fail/cancel handler (§8.1, §8.3, #7). ALWAYS verifies via API No.3 — never the
@@ -121,7 +96,7 @@ export async function handleEpsCallback(req: NextRequest) {
   if (status === 'FAILED' || status === 'CANCELLED') {
     await payload.update({ collection: 'transactions', id: txn.id, data: { status: status === 'FAILED' ? 'failed' : 'cancelled', rawVerify: verified }, overrideAccess: true })
     if (orderId) {
-      await releaseReservations(payload, orderId)
+      await releaseOrderReservations(payload, orderId)
       await payload.update({ collection: 'orders', id: orderId, data: { fulfilmentStatus: 'cancelled' }, overrideAccess: true })
     }
     return result(req, status.toLowerCase(), order?.orderNumber ?? undefined)
