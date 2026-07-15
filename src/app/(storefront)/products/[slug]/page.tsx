@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import { RichText } from '@payloadcms/richtext-lexical/react'
 
 import type { Ingredient } from '@/payload-types'
-import { getProductBySlug, getActiveVariants, getPublishedProductSlugs } from '@/lib/commerce'
+import { getProductBySlug, getActiveVariants, getPublishedProductSlugs, getFefoLotForVariant } from '@/lib/commerce'
 import { ResponsiveImage } from '@/components/ResponsiveImage'
 import { Price } from '@/components/Price'
 import { AuthenticitySlip } from '@/components/AuthenticitySlip'
@@ -37,6 +37,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const variants = await getActiveVariants(product.id)
   const brand = product.brand && typeof product.brand === 'object' ? product.brand : null
   const cheapest = variants[0]
+  const fefoLot = cheapest ? await getFefoLotForVariant(cheapest.id) : null
   const hero = product.images?.[0]
   const preorder = product.fulfilmentMode === 'preOrder'
   const ingredients = (product.keyIngredients ?? []).filter(
@@ -100,15 +101,35 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             </div>
           )}
 
-          {/* 4. Authenticity slip — the signature */}
-          <AuthenticitySlip />
+          {/* 4. Authenticity slip — the signature, wired to the FEFO lot (§16.4) */}
+          <AuthenticitySlip
+            lot={
+              fefoLot
+                ? {
+                    lotCode: fefoLot.lotCode,
+                    mfgDate: fefoLot.mfgDate,
+                    expDate: fefoLot.expDate,
+                    importDate: fefoLot.importDate,
+                    poRef: fefoLot.poRef,
+                  }
+                : undefined
+            }
+            verifyHref={fefoLot ? `/verify?code=${encodeURIComponent(fefoLot.lotCode)}` : undefined}
+          />
 
-          {/* 5. Stock + delivery promise */}
-          <p className="font-mono text-xs text-grey">
-            {preorder
-              ? `Pre-order · ships from Korea in ~${cheapest?.preOrderLeadDays ?? 15} days`
-              : 'In stock · 2–3 days in Dhaka'}
-          </p>
+          {/* 5. Stock + delivery promise (+ the EXP of the lot FEFO would ship, §10.2) */}
+          <div className="font-mono text-xs text-grey">
+            <p>
+              {preorder
+                ? `Pre-order · ships from Korea in ~${cheapest?.preOrderLeadDays ?? 15} days`
+                : 'In stock · 2–3 days in Dhaka'}
+            </p>
+            {fefoLot?.expDate && (
+              <p>
+                Current lot expires <span className="text-ink">{fefoLot.expDate}</span>
+              </p>
+            )}
+          </div>
 
           {/* 6. CTA (WhatsApp now; cart/checkout arrives in Phase 3) */}
           <div className="flex flex-wrap gap-3">
