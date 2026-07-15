@@ -1,4 +1,5 @@
 import { vercelPostgresAdapter } from '@payloadcms/db-vercel-postgres'
+import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig } from 'payload'
@@ -11,13 +12,21 @@ import { Media } from './collections/Media'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
+const isProd = process.env.NODE_ENV === 'production'
+const blobToken = process.env.BLOB_READ_WRITE_TOKEN
+
 export default buildConfig({
+  serverURL: process.env.NEXT_PUBLIC_SITE_URL || undefined,
   admin: {
     user: Users.slug,
+    meta: {
+      titleSuffix: " — Decor's K-Beauty",
+    },
     importMap: {
       baseDir: path.resolve(dirname),
     },
   },
+  // Single-locale English (i18n intentionally dropped — see JOURNEY 2026-07-15 / [[english-only-override]]).
   collections: [Users, Media],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
@@ -25,10 +34,25 @@ export default buildConfig({
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
   db: vercelPostgresAdapter({
+    // Neon POOLED connection string only (-pooler host). See CLAUDE.md / BUILD_PROMPT §2.1.
     pool: {
-      connectionString: process.env.POSTGRES_URL || '',
+      connectionString: process.env.DATABASE_URL || '',
     },
+    // Never push against production — migrations only. Dev/test may push to sync schema.
+    push: !isProd,
   }),
   sharp,
-  plugins: [],
+  plugins: [
+    // Vercel Blob in every env that has a token; falls back to local disk otherwise
+    // so Phase 0 (no token yet) still runs. Pre-generated responsive set comes in Phase 1 (§15.4).
+    ...(blobToken
+      ? [
+          vercelBlobStorage({
+            enabled: true,
+            collections: { media: true },
+            token: blobToken,
+          }),
+        ]
+      : []),
+  ],
 })

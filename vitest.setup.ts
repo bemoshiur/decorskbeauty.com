@@ -1,4 +1,4 @@
-// Any setup scripts you might need go here
+// Load env for integration tests. .env.local (real secrets, gitignored) takes precedence.
+import { config } from 'dotenv'
 
-// Load .env files
-import 'dotenv/config'
+config({ path: ['.env.local', '.env'] })
