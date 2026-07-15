@@ -7,6 +7,15 @@ export {
   effectivePrice,
   type ProductCard,
 } from './products'
+export {
+  computeCheckoutTerms,
+  DELIVERY_CHARGE,
+  FREE_SHIPPING_MIN_SUBTOTAL,
+  ZONE_LABEL,
+  type Zone,
+  type CartForTerms,
+  type CheckoutTerms,
+} from './checkout'
 export { CATALOG_TAG, productTag, categoryTag, brandTag } from './tags'
 export {
   getFefoLotForVariant,
