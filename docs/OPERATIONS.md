@@ -6,9 +6,13 @@ Operational runbooks for the Phase 9 hardening items that are procedures, not co
 
 Production runs with `push: false`, so the schema is created/updated **only** by migrations —
 Payload will not auto-sync tables. The baseline migration (all 95 tables/enums) is committed at
-`src/migrations/20260715_220439_initial.ts`, and Vercel runs it on every deploy via
-`vercel.json → buildCommand: "pnpm migrate && pnpm build"` (migrate first, so the pre-render step
-has its tables).
+`src/migrations/20260715_220439_initial.ts`.
+
+**Do NOT run `pnpm migrate` in the Vercel build command against a database that already has the
+schema** (e.g. the dev DB that was built via push): the baseline migration would try to re-create
+existing tables and the whole build fails, so Vercel keeps serving the last good build. The default
+build command (`pnpm build`) is correct for an already-provisioned DB. Run `pnpm migrate` (once,
+manually or as a one-off build command) only against a **fresh, empty** database.
 
 **Deploy against a FRESH prod database (recommended):** set `DATABASE_URL` to a new, empty Neon
 database. Vercel's build runs `pnpm migrate` → creates the whole schema → builds. Clean separation of

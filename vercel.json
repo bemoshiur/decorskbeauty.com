@@ -1,5 +1,4 @@
 {
-  "buildCommand": "pnpm migrate && pnpm build",
   "crons": [
     { "path": "/api/cron/courier-sync", "schedule": "*/30 * * * *" },
     { "path": "/api/cron/capi-drain", "schedule": "* * * * *" },
