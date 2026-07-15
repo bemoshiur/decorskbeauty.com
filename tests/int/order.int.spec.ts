@@ -3,12 +3,13 @@ import config from '@/payload.config'
 import { describe, it, beforeAll, afterAll, expect } from 'vitest'
 
 import { placeOrder } from '@/lib/commerce/placeOrder'
+import { markHandedToCourier, markReturned } from '@/lib/commerce/fulfilment'
 
 let payload: Payload
 
 const TITLE = 'TEST Order Product'
 const SKU = 'TEST-ORD-1'
-const PHONES = ['8801700000001', '8801700000002']
+const PHONES = ['8801700000001', '8801700000002', '8801700000003']
 
 async function cleanup() {
   const custs = await payload.find({ collection: 'customers', where: { phone: { in: PHONES } }, limit: 50, depth: 0 })
@@ -17,6 +18,8 @@ async function cleanup() {
     for (const o of orders.docs) {
       const txns = await payload.find({ collection: 'transactions', where: { order: { equals: o.id } }, limit: 50, depth: 0 })
       for (const t of txns.docs) await payload.delete({ collection: 'transactions', id: t.id, overrideAccess: true })
+      const rets = await payload.find({ collection: 'returns', where: { order: { equals: o.id } }, limit: 50, depth: 0 })
+      for (const r of rets.docs) await payload.delete({ collection: 'returns', id: r.id, overrideAccess: true })
       await payload.delete({ collection: 'orders', id: o.id, overrideAccess: true })
     }
     await payload.delete({ collection: 'customers', id: c.id, overrideAccess: true })
@@ -94,5 +97,28 @@ describe('Order placement + FEFO reservation (§7, §10.1, #2/#4)', () => {
     const txns = await payload.find({ collection: 'transactions', where: { merchantTransactionId: { equals: payment.merchantTransactionId } }, overrideAccess: true })
     expect(txns.docs[0]?.status).toBe('pending')
     expect(txns.docs[0]?.amount).toBe(200)
+  })
+
+  it('RTO restocks to the original lot and bumps cancelledCount (§9.4, #12)', async () => {
+    const { order } = await placeOrder({
+      lines: [{ variantId, qty: 3 }],
+      zone: 'dhakaCity',
+      customer: { name: 'RTO Buyer', phone: PHONES[2], address: 'Banani' },
+      paymentChoice: 'cod',
+    })
+    await markHandedToCourier(payload, order.id)
+    const afterShip = await payload.findByID({ collection: 'variants', id: variantId })
+
+    await markReturned(payload, order.id, 'rto')
+    const afterReturn = await payload.findByID({ collection: 'variants', id: variantId })
+    expect(afterReturn.availableQty).toBe((afterShip.availableQty ?? 0) + 3) // restored to the original lot
+
+    const o = await payload.findByID({ collection: 'orders', id: order.id })
+    expect(o.fulfilmentStatus).toBe('returned')
+    const rets = await payload.find({ collection: 'returns', where: { order: { equals: order.id } }, overrideAccess: true })
+    expect(rets.docs).toHaveLength(1)
+
+    const cust = await payload.find({ collection: 'customers', where: { phone: { equals: PHONES[2] } }, overrideAccess: true })
+    expect(cust.docs[0]?.cancelledCount).toBe(1)
   })
 })

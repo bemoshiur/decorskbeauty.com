@@ -83,6 +83,7 @@ export interface Config {
     customers: Customer;
     orders: Order;
     transactions: Transaction;
+    returns: Return;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -106,6 +107,7 @@ export interface Config {
     customers: CustomersSelect<false> | CustomersSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
     transactions: TransactionsSelect<false> | TransactionsSelect<true>;
+    returns: ReturnsSelect<false> | ReturnsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -849,6 +851,31 @@ export interface Transaction {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "returns".
+ */
+export interface Return {
+  id: number;
+  order?: (number | null) | Order;
+  type?: ('rto' | 'customerReturn') | null;
+  items?:
+    | {
+        variant?: (number | null) | Variant;
+        qty?: number | null;
+        condition?: ('resellable' | 'damaged') | null;
+        id?: string | null;
+      }[]
+    | null;
+  reason?: string | null;
+  condition?: ('resellable' | 'damaged') | null;
+  restockLot?: (number | null) | StockLot;
+  refundAmount?: number | null;
+  refundMethod?: string | null;
+  status?: ('open' | 'processed' | 'closed') | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -934,6 +961,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'transactions';
         value: number | Transaction;
+      } | null)
+    | ({
+        relationTo: 'returns';
+        value: number | Return;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -1471,6 +1502,30 @@ export interface TransactionsSelect<T extends boolean = true> {
   rawVerify?: T;
   verifiedAt?: T;
   financialEntity?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "returns_select".
+ */
+export interface ReturnsSelect<T extends boolean = true> {
+  order?: T;
+  type?: T;
+  items?:
+    | T
+    | {
+        variant?: T;
+        qty?: T;
+        condition?: T;
+        id?: T;
+      };
+  reason?: T;
+  condition?: T;
+  restockLot?: T;
+  refundAmount?: T;
+  refundMethod?: T;
+  status?: T;
   updatedAt?: T;
   createdAt?: T;
 }
