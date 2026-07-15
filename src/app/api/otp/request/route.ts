@@ -1,3 +1,5 @@
+import { randomInt } from 'crypto'
+
 import { NextResponse, type NextRequest } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@payload-config'
@@ -36,7 +38,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'Too many requests. Try again later.' }, { status: 429 })
   }
 
-  const code = String(Math.floor(100000 + Math.random() * 900000))
+  // CSPRNG — OTP codes must be unpredictable and uniformly distributed.
+  const code = String(randomInt(0, 1_000_000)).padStart(6, '0')
   await payload.create({
     collection: 'otpChallenges',
     overrideAccess: true,
