@@ -1927,6 +1927,19 @@ export interface Setting {
     bin?: string | null;
     phone?: string | null;
   };
+  /**
+   * Drives hasMerchantReturnPolicy in Product JSON-LD (§14.2). Structured data must match the REAL policy — a wrong policy risks a Google manual action. Confirm before go-live.
+   */
+  returns?: {
+    /**
+     * Uncheck if opened cosmetics are non-returnable → emits MerchantReturnNotPermitted.
+     */
+    returnsAccepted?: boolean | null;
+    /**
+     * Days to return a damaged/wrong item.
+     */
+    returnWindowDays?: number | null;
+  };
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -1945,6 +1958,12 @@ export interface SettingsSelect<T extends boolean = true> {
         address?: T;
         bin?: T;
         phone?: T;
+      };
+  returns?:
+    | T
+    | {
+        returnsAccepted?: T;
+        returnWindowDays?: T;
       };
   updatedAt?: T;
   createdAt?: T;
