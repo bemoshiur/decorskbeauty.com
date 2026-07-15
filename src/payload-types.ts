@@ -85,6 +85,12 @@ export interface Config {
     transactions: Transaction;
     returns: Return;
     capiQueue: CapiQueue;
+    accounts: Account;
+    journalEntries: JournalEntry;
+    journalLines: JournalLine;
+    fiscalPeriods: FiscalPeriod;
+    courierPayouts: CourierPayout;
+    epsSettlements: EpsSettlement;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -110,6 +116,12 @@ export interface Config {
     transactions: TransactionsSelect<false> | TransactionsSelect<true>;
     returns: ReturnsSelect<false> | ReturnsSelect<true>;
     capiQueue: CapiQueueSelect<false> | CapiQueueSelect<true>;
+    accounts: AccountsSelect<false> | AccountsSelect<true>;
+    journalEntries: JournalEntriesSelect<false> | JournalEntriesSelect<true>;
+    journalLines: JournalLinesSelect<false> | JournalLinesSelect<true>;
+    fiscalPeriods: FiscalPeriodsSelect<false> | FiscalPeriodsSelect<true>;
+    courierPayouts: CourierPayoutsSelect<false> | CourierPayoutsSelect<true>;
+    epsSettlements: EpsSettlementsSelect<false> | EpsSettlementsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -119,8 +131,12 @@ export interface Config {
     defaultIDType: number;
   };
   fallbackLocale: null;
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    settings: Setting;
+  };
+  globalsSelect: {
+    settings: SettingsSelect<false> | SettingsSelect<true>;
+  };
   locale: null;
   widgets: {
     collections: CollectionsWidget;
@@ -902,6 +918,138 @@ export interface CapiQueue {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "accounts".
+ */
+export interface Account {
+  id: number;
+  /**
+   * Permanent — never renumber (§12.1).
+   */
+  code: string;
+  name: string;
+  type: 'asset' | 'liability' | 'equity' | 'income' | 'expense';
+  parent?: (number | null) | Account;
+  active?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "journalEntries".
+ */
+export interface JournalEntry {
+  id: number;
+  date: string;
+  source: 'order' | 'purchaseOrder' | 'courierPayout' | 'epsSettlement' | 'manual' | 'systemClose';
+  sourceId?: string | null;
+  /**
+   * Stable per (source,sourceId) — the idempotency + audit key, e.g. sale / cogs / po-receive.
+   */
+  ref?: string | null;
+  memo?: string | null;
+  status?: ('draft' | 'posted' | 'void') | null;
+  postedBy?: (number | null) | User;
+  postedAt?: string | null;
+  period?: (number | null) | FiscalPeriod;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "fiscalPeriods".
+ */
+export interface FiscalPeriod {
+  id: number;
+  /**
+   * YYYY-MM.
+   */
+  month: string;
+  status?: ('open' | 'closed') | null;
+  closedAt?: string | null;
+  closedBy?: (number | null) | User;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "journalLines".
+ */
+export interface JournalLine {
+  id: number;
+  entry: number | JournalEntry;
+  account: number | Account;
+  debit?: number | null;
+  credit?: number | null;
+  orderRef?: string | null;
+  poRef?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "courierPayouts".
+ */
+export interface CourierPayout {
+  id: number;
+  provider?: ('pathao' | 'steadfast') | null;
+  periodStart?: string | null;
+  periodEnd?: string | null;
+  consignments?:
+    | {
+        consignmentId?: string | null;
+        orderLink?: (number | null) | Order;
+        codCollected?: number | null;
+        courierFee?: number | null;
+        rtoFee?: number | null;
+        matched?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  codCollected?: number | null;
+  courierFee?: number | null;
+  rtoFee?: number | null;
+  netReceived?: number | null;
+  /**
+   * Statement vs ledger. Never auto-post a non-zero variance (§12.5).
+   */
+  variance?: number | null;
+  reconciledAt?: string | null;
+  status?: ('pending' | 'reconciled') | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "epsSettlements".
+ */
+export interface EpsSettlement {
+  id: number;
+  periodStart?: string | null;
+  periodEnd?: string | null;
+  transactions?:
+    | {
+        merchantTransactionId?: string | null;
+        transaction?: (number | null) | Transaction;
+        gross?: number | null;
+        mdr?: number | null;
+        matched?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  gross?: number | null;
+  mdr?: number | null;
+  netReceived?: number | null;
+  /**
+   * Statement vs ledger. Never auto-post a non-zero variance (§12.5).
+   */
+  variance?: number | null;
+  reconciledAt?: string | null;
+  status?: ('pending' | 'reconciled') | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -995,6 +1143,30 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'capiQueue';
         value: number | CapiQueue;
+      } | null)
+    | ({
+        relationTo: 'accounts';
+        value: number | Account;
+      } | null)
+    | ({
+        relationTo: 'journalEntries';
+        value: number | JournalEntry;
+      } | null)
+    | ({
+        relationTo: 'journalLines';
+        value: number | JournalLine;
+      } | null)
+    | ({
+        relationTo: 'fiscalPeriods';
+        value: number | FiscalPeriod;
+      } | null)
+    | ({
+        relationTo: 'courierPayouts';
+        value: number | CourierPayout;
+      } | null)
+    | ({
+        relationTo: 'epsSettlements';
+        value: number | EpsSettlement;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -1576,6 +1748,117 @@ export interface CapiQueueSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "accounts_select".
+ */
+export interface AccountsSelect<T extends boolean = true> {
+  code?: T;
+  name?: T;
+  type?: T;
+  parent?: T;
+  active?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "journalEntries_select".
+ */
+export interface JournalEntriesSelect<T extends boolean = true> {
+  date?: T;
+  source?: T;
+  sourceId?: T;
+  ref?: T;
+  memo?: T;
+  status?: T;
+  postedBy?: T;
+  postedAt?: T;
+  period?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "journalLines_select".
+ */
+export interface JournalLinesSelect<T extends boolean = true> {
+  entry?: T;
+  account?: T;
+  debit?: T;
+  credit?: T;
+  orderRef?: T;
+  poRef?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "fiscalPeriods_select".
+ */
+export interface FiscalPeriodsSelect<T extends boolean = true> {
+  month?: T;
+  status?: T;
+  closedAt?: T;
+  closedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "courierPayouts_select".
+ */
+export interface CourierPayoutsSelect<T extends boolean = true> {
+  provider?: T;
+  periodStart?: T;
+  periodEnd?: T;
+  consignments?:
+    | T
+    | {
+        consignmentId?: T;
+        orderLink?: T;
+        codCollected?: T;
+        courierFee?: T;
+        rtoFee?: T;
+        matched?: T;
+        id?: T;
+      };
+  codCollected?: T;
+  courierFee?: T;
+  rtoFee?: T;
+  netReceived?: T;
+  variance?: T;
+  reconciledAt?: T;
+  status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "epsSettlements_select".
+ */
+export interface EpsSettlementsSelect<T extends boolean = true> {
+  periodStart?: T;
+  periodEnd?: T;
+  transactions?:
+    | T
+    | {
+        merchantTransactionId?: T;
+        transaction?: T;
+        gross?: T;
+        mdr?: T;
+        matched?: T;
+        id?: T;
+      };
+  gross?: T;
+  mdr?: T;
+  netReceived?: T;
+  variance?: T;
+  reconciledAt?: T;
+  status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv_select".
  */
 export interface PayloadKvSelect<T extends boolean = true> {
@@ -1613,6 +1896,59 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "settings".
+ */
+export interface Setting {
+  id: number;
+  /**
+   * ⚠ VAT NOT CONFIGURED. Stays 0 until the rate + Mushak form are confirmed with the VAT consultant (§12.4). Do not guess.
+   */
+  vatRatePercent?: number | null;
+  /**
+   * Are catalog prices VAT-inclusive? Confirm with the consultant.
+   */
+  vatInclusive?: boolean | null;
+  /**
+   * Invoice form label (§12.4) — switchable without a code change.
+   */
+  mushakForm?: string | null;
+  /**
+   * Printed on the invoice (§12.4).
+   */
+  seller?: {
+    name?: string | null;
+    address?: string | null;
+    /**
+     * BIN — required on a Mushak invoice. Add before go-live.
+     */
+    bin?: string | null;
+    phone?: string | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "settings_select".
+ */
+export interface SettingsSelect<T extends boolean = true> {
+  vatRatePercent?: T;
+  vatInclusive?: T;
+  mushakForm?: T;
+  seller?:
+    | T
+    | {
+        name?: T;
+        address?: T;
+        bin?: T;
+        phone?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

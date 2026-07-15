@@ -28,6 +28,13 @@ import { Orders } from './collections/Orders'
 import { Transactions } from './collections/Transactions'
 import { Returns } from './collections/Returns'
 import { CapiQueue } from './collections/CapiQueue'
+import { Accounts } from './collections/Accounts'
+import { JournalEntries } from './collections/JournalEntries'
+import { JournalLines } from './collections/JournalLines'
+import { FiscalPeriods } from './collections/FiscalPeriods'
+import { CourierPayouts } from './collections/CourierPayouts'
+import { EpsSettlements } from './collections/EpsSettlements'
+import { Settings } from './globals/Settings'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -66,7 +73,14 @@ export default buildConfig({
     Transactions,
     Returns,
     CapiQueue,
+    Accounts,
+    JournalEntries,
+    JournalLines,
+    FiscalPeriods,
+    CourierPayouts,
+    EpsSettlements,
   ],
+  globals: [Settings],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
