@@ -64,3 +64,32 @@ Append-only build log. Newest at the bottom. Format per CLAUDE.md.
 **Verified:** `typecheck`, `test` (Neon), `build` (17 pages prerendered incl. 12 PDPs), `lint` (0 errors), Lighthouse — home + PDP **LCP ~1.3s, CLS 0, perf ~1.0** (devtools throttling).
 
 **Next:** Phase 2 — Inventory (suppliers, POs, landed cost, `stockLots`, `stockMovements`, FEFO allocator, expiry policy) and wire the authenticity slip + PDP EXP to the real FEFO lot, plus `/verify`.
+
+---
+
+## 2026-07-15 · Phase 2 · Inventory
+
+**Shipped:**
+- Inventory collections (§4.2): `suppliers`, `purchaseOrders`, `stockLots` (authenticity spine), `stockMovements` (immutable, append-only).
+- **Landed cost** (§4.2) as a pure, tested function (byValue / byWeight / byQty). PO `status → received` hook computes it and creates a lot + `receipt` movement per line.
+- **Movement → quantity hook**: `stockLots.qtyAvailable` and `variants.availableQty` are maintained ONLY through movements (non-negotiable #4).
+- **FEFO allocator** (§10.1), pure + tested: earliest EXP, tiebreak earliest receipt, skips quarantined/expired and the <3-month near-expiry window (§10.3).
+- PDP now shows the **FEFO lot's EXP** (§10.2); the **authenticity slip** is wired to the real lot (LOT/MFG/EXP/import); **`/verify`** (§6.2) resolves a batch code → product + import docs, with an honest not-found + WhatsApp fallback (never a faked pass).
+- Seeded a PO receive → **12 real lots** for the catalog.
+
+**Decisions:**
+- Accounting journals for receipts stay in **Phase 7** — inventory and accounting deliberately decoupled.
+- vitest `fileParallelism: false` so two Payload inits don't race on `CREATE TYPE` for new enums.
+- The movement hook threads `req` so it reads inside the receive transaction (the lot exists mid-transaction).
+- Hiding `landedCostPerUnit` from packer/support is deferred to **Phase 9** RBAC.
+
+**Non-negotiables touched:** **#4** (availableQty changes only via `stockMovements` — proven by an integration test: receipt → qtyAvailable=20), authenticity honesty (slip + `/verify` show real lot data or an honest miss, never a fake code). #1 unchanged.
+
+**Open:**
+- Near-expiry **status cron** (§10.3 daily transitions) + `/c/clearance` — later. FEFO eligibility is computed at query time, so allocation is correct now regardless of lot `status`.
+- Import docs (BL / invoice / customs release) aren't uploaded on the seeded lots yet — the `/verify` docs section renders when they're present.
+- `reserve` / `ship` / `returnRestock` movement flow arrives with cart (Phase 3) + fulfilment (Phase 5).
+
+**Verified:** typecheck, **16 tests** (landed cost = 135; receipt → `qtyAvailable` = 20 via #4; FEFO order/tiebreak/skip; idempotent receive), lint, build, Lighthouse (budgets hold); PDP EXP + `/verify` confirmed against real seeded lots (`CRX-921-2506` → Verified).
+
+**Next:** Phase 3 — Cart + checkout: `computeCheckoutTerms` with a unit test for **every** §1.1 branch (the hard gate), OTP, Pathao location cache, guest checkout. **Blocked on spec question C** (is ">৳5,000 → 30%" measured on subtotal or grandTotal?) — need the owner before finalizing the terms function.
