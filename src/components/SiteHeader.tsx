@@ -14,6 +14,9 @@ export function SiteHeader() {
           <Link href="/" className="hover:text-celadon-deep">
             Shop
           </Link>
+          <Link href="/checkout" className="hover:text-celadon-deep">
+            Cart
+          </Link>
           <a
             href="https://wa.me/8801712113032"
             target="_blank"

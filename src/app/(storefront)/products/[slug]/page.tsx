@@ -4,6 +4,7 @@ import { RichText } from '@payloadcms/richtext-lexical/react'
 
 import type { Ingredient } from '@/payload-types'
 import { getProductBySlug, getActiveVariants, getPublishedProductSlugs, getFefoLotForVariant } from '@/lib/commerce'
+import { addToCartAction } from '../../cart-actions'
 import { ResponsiveImage } from '@/components/ResponsiveImage'
 import { Price } from '@/components/Price'
 import { AuthenticitySlip } from '@/components/AuthenticitySlip'
@@ -131,13 +132,24 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             )}
           </div>
 
-          {/* 6. CTA (WhatsApp now; cart/checkout arrives in Phase 3) */}
-          <div className="flex flex-wrap gap-3">
+          {/* 6. Add to cart + WhatsApp (§7) */}
+          <div className="flex flex-wrap items-center gap-3">
+            {cheapest && (
+              <form action={addToCartAction}>
+                <input type="hidden" name="variantId" value={cheapest.id} />
+                <button
+                  type="submit"
+                  className="rounded-[4px] bg-celadon-deep px-5 py-2.5 text-sm text-paper transition-colors hover:bg-celadon"
+                >
+                  Add to cart
+                </button>
+              </form>
+            )}
             <a
               href={`https://wa.me/8801712113032?text=${waText}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-[4px] bg-celadon-deep px-5 py-2.5 text-sm text-paper transition-colors hover:bg-celadon"
+              className="rounded-[4px] border border-celadon-deep px-5 py-2.5 text-sm text-celadon-deep transition-colors hover:bg-celadon/10"
             >
               Order on WhatsApp
             </a>

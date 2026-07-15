@@ -78,6 +78,8 @@ export interface Config {
     purchaseOrders: PurchaseOrder;
     stockLots: StockLot;
     stockMovements: StockMovement;
+    carts: Cart;
+    otpChallenges: OtpChallenge;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -96,6 +98,8 @@ export interface Config {
     purchaseOrders: PurchaseOrdersSelect<false> | PurchaseOrdersSelect<true>;
     stockLots: StockLotsSelect<false> | StockLotsSelect<true>;
     stockMovements: StockMovementsSelect<false> | StockMovementsSelect<true>;
+    carts: CartsSelect<false> | CartsSelect<true>;
+    otpChallenges: OtpChallengesSelect<false> | OtpChallengesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -608,6 +612,53 @@ export interface StockMovement {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "carts".
+ */
+export interface Cart {
+  id: number;
+  token: string;
+  items?:
+    | {
+        variant: number | Variant;
+        qty: number;
+        id?: string | null;
+      }[]
+    | null;
+  phone?: string | null;
+  /**
+   * First-touch attribution — carried to the order for CAPI (Phase 6).
+   */
+  attribution?: {
+    fbp?: string | null;
+    fbc?: string | null;
+    fbclid?: string | null;
+    utmSource?: string | null;
+    utmMedium?: string | null;
+    utmCampaign?: string | null;
+    landingPath?: string | null;
+  };
+  expiresAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "otpChallenges".
+ */
+export interface OtpChallenge {
+  id: number;
+  phone: string;
+  codeHash: string;
+  expiresAt: string;
+  attempts?: number | null;
+  lockedUntil?: string | null;
+  ip?: string | null;
+  consumed?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -673,6 +724,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'stockMovements';
         value: number | StockMovement;
+      } | null)
+    | ({
+        relationTo: 'carts';
+        value: number | Cart;
+      } | null)
+    | ({
+        relationTo: 'otpChallenges';
+        value: number | OtpChallenge;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -1031,6 +1090,50 @@ export interface StockMovementsSelect<T extends boolean = true> {
   refId?: T;
   actor?: T;
   at?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "carts_select".
+ */
+export interface CartsSelect<T extends boolean = true> {
+  token?: T;
+  items?:
+    | T
+    | {
+        variant?: T;
+        qty?: T;
+        id?: T;
+      };
+  phone?: T;
+  attribution?:
+    | T
+    | {
+        fbp?: T;
+        fbc?: T;
+        fbclid?: T;
+        utmSource?: T;
+        utmMedium?: T;
+        utmCampaign?: T;
+        landingPath?: T;
+      };
+  expiresAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "otpChallenges_select".
+ */
+export interface OtpChallengesSelect<T extends boolean = true> {
+  phone?: T;
+  codeHash?: T;
+  expiresAt?: T;
+  attempts?: T;
+  lockedUntil?: T;
+  ip?: T;
+  consumed?: T;
   updatedAt?: T;
   createdAt?: T;
 }
