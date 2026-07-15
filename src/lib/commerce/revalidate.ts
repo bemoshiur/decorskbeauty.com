@@ -18,8 +18,19 @@ const bust = async (slug?: unknown) => {
   }
 }
 
-export const revalidateCatalogAfterChange: CollectionAfterChangeHook = async ({ doc }) => {
-  await bust((doc as { slug?: unknown })?.slug)
+export const revalidateCatalogAfterChange: CollectionAfterChangeHook = async ({ doc, collection }) => {
+  const slug = (doc as { slug?: unknown })?.slug
+  await bust(slug)
+  // IndexNow ping on publish/price change (§14.1). Only for a published product with a slug;
+  // creds-gated (no-op without INDEXNOW_KEY), best-effort, never throws.
+  if (collection?.slug === 'products' && typeof slug === 'string' && (doc as { _status?: string })?._status === 'published') {
+    try {
+      const { pingIndexNow } = await import('@/lib/seo/indexnow')
+      await pingIndexNow([`/products/${slug}`])
+    } catch {
+      /* outside a network context — skip */
+    }
+  }
   return doc
 }
 
