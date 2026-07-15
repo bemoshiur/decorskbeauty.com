@@ -69,6 +69,11 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
+    brands: Brand;
+    categories: Category;
+    ingredients: Ingredient;
+    products: Product;
+    variants: Variant;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -78,6 +83,11 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    brands: BrandsSelect<false> | BrandsSelect<true>;
+    categories: CategoriesSelect<false> | CategoriesSelect<true>;
+    ingredients: IngredientsSelect<false> | IngredientsSelect<true>;
+    products: ProductsSelect<false> | ProductsSelect<true>;
+    variants: VariantsSelect<false> | VariantsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -163,6 +173,268 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "brands".
+ */
+export interface Brand {
+  id: number;
+  name: string;
+  /**
+   * Latin only. Auto-generated from the name/title if left blank.
+   */
+  slug?: string | null;
+  logo?: (number | null) | Media;
+  countryOfOrigin?: string | null;
+  story?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * Search/social metadata. Falls back to title + short description if blank.
+   */
+  seo?: {
+    metaTitle?: string | null;
+    metaDescription?: string | null;
+    ogImage?: (number | null) | Media;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories".
+ */
+export interface Category {
+  id: number;
+  name: string;
+  /**
+   * Latin only. Auto-generated from the name/title if left blank.
+   */
+  slug?: string | null;
+  parent?: (number | null) | Category;
+  image?: (number | null) | Media;
+  description?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * Search/social metadata. Falls back to title + short description if blank.
+   */
+  seo?: {
+    metaTitle?: string | null;
+    metaDescription?: string | null;
+    ogImage?: (number | null) | Media;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ingredients".
+ */
+export interface Ingredient {
+  id: number;
+  name: string;
+  /**
+   * Latin only. Auto-generated from the name/title if left blank.
+   */
+  slug?: string | null;
+  definition?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  benefits?: string | null;
+  cautions?: string | null;
+  /**
+   * Search/social metadata. Falls back to title + short description if blank.
+   */
+  seo?: {
+    metaTitle?: string | null;
+    metaDescription?: string | null;
+    ogImage?: (number | null) | Media;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "products".
+ */
+export interface Product {
+  id: number;
+  title: string;
+  /**
+   * Latin only. Auto-generated from the name/title if left blank.
+   */
+  slug?: string | null;
+  brand?: (number | null) | Brand;
+  categories?: (number | Category)[] | null;
+  shortDescription?: string | null;
+  description?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  howToUse?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * Full INCI list, verbatim from packaging (EN).
+   */
+  inci?: string | null;
+  keyIngredients?: (number | Ingredient)[] | null;
+  productType?:
+    | (
+        | 'cleanser'
+        | 'toner'
+        | 'essence'
+        | 'serum'
+        | 'ampoule'
+        | 'moisturizer'
+        | 'sunscreen'
+        | 'mask'
+        | 'exfoliator'
+        | 'eyeCream'
+        | 'shampoo'
+        | 'conditioner'
+        | 'hairTreatment'
+        | 'tool'
+        | 'set'
+      )
+    | null;
+  /**
+   * Powers the routine builder. Null for haircare and tools.
+   */
+  routineStep?: number | null;
+  skinTypes?: ('dry' | 'oily' | 'combination' | 'sensitive' | 'normal' | 'acneProne')[] | null;
+  concerns?:
+    | ('acne' | 'pigmentation' | 'dullness' | 'aging' | 'pores' | 'redness' | 'hairfall' | 'dandruff' | 'frizz')[]
+    | null;
+  images?:
+    | {
+        image: number | Media;
+        alt?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  fulfilmentMode?: ('readyStock' | 'preOrder' | 'both') | null;
+  /**
+   * Powers FAQPage JSON-LD (§14.2). Minimum 3 per PDP (§14.3).
+   */
+  faq?:
+    | {
+        question: string;
+        answer: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Search/social metadata. Falls back to title + short description if blank.
+   */
+  seo?: {
+    metaTitle?: string | null;
+    metaDescription?: string | null;
+    ogImage?: (number | null) | Media;
+  };
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "variants".
+ */
+export interface Variant {
+  id: number;
+  product: number | Product;
+  /**
+   * THE identity spine (non-negotiable #1). Byte-identical in Meta catalog id, Pixel content_ids, CAPI contents[].id, Google feed id. Never change once live.
+   */
+  sku: string;
+  optionSize?: string | null;
+  optionShade?: string | null;
+  optionBundle?: string | null;
+  barcode?: string | null;
+  /**
+   * Regular price, BDT.
+   */
+  mrp: number;
+  salePrice?: number | null;
+  saleStart?: string | null;
+  saleEnd?: string | null;
+  /**
+   * Required — Pathao rejects orders without weight.
+   */
+  weightGrams: number;
+  preOrderLeadDays?: number | null;
+  /**
+   * Variant-specific shot (e.g. shade swatch).
+   */
+  image?: (number | null) | Media;
+  active?: boolean | null;
+  /**
+   * Denormalized. Maintained ONLY by the stock-movement hook (Phase 2, non-negotiable #4). Never write directly.
+   */
+  availableQty?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -192,6 +464,26 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'brands';
+        value: number | Brand;
+      } | null)
+    | ({
+        relationTo: 'categories';
+        value: number | Category;
+      } | null)
+    | ({
+        relationTo: 'ingredients';
+        value: number | Ingredient;
+      } | null)
+    | ({
+        relationTo: 'products';
+        value: number | Product;
+      } | null)
+    | ({
+        relationTo: 'variants';
+        value: number | Variant;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -274,6 +566,133 @@ export interface MediaSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "brands_select".
+ */
+export interface BrandsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  logo?: T;
+  countryOfOrigin?: T;
+  story?: T;
+  seo?:
+    | T
+    | {
+        metaTitle?: T;
+        metaDescription?: T;
+        ogImage?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories_select".
+ */
+export interface CategoriesSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  parent?: T;
+  image?: T;
+  description?: T;
+  seo?:
+    | T
+    | {
+        metaTitle?: T;
+        metaDescription?: T;
+        ogImage?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ingredients_select".
+ */
+export interface IngredientsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  definition?: T;
+  benefits?: T;
+  cautions?: T;
+  seo?:
+    | T
+    | {
+        metaTitle?: T;
+        metaDescription?: T;
+        ogImage?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "products_select".
+ */
+export interface ProductsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  brand?: T;
+  categories?: T;
+  shortDescription?: T;
+  description?: T;
+  howToUse?: T;
+  inci?: T;
+  keyIngredients?: T;
+  productType?: T;
+  routineStep?: T;
+  skinTypes?: T;
+  concerns?: T;
+  images?:
+    | T
+    | {
+        image?: T;
+        alt?: T;
+        id?: T;
+      };
+  fulfilmentMode?: T;
+  faq?:
+    | T
+    | {
+        question?: T;
+        answer?: T;
+        id?: T;
+      };
+  seo?:
+    | T
+    | {
+        metaTitle?: T;
+        metaDescription?: T;
+        ogImage?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "variants_select".
+ */
+export interface VariantsSelect<T extends boolean = true> {
+  product?: T;
+  sku?: T;
+  optionSize?: T;
+  optionShade?: T;
+  optionBundle?: T;
+  barcode?: T;
+  mrp?: T;
+  salePrice?: T;
+  saleStart?: T;
+  saleEnd?: T;
+  weightGrams?: T;
+  preOrderLeadDays?: T;
+  image?: T;
+  active?: T;
+  availableQty?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

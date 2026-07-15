@@ -1,3 +1,7 @@
+import { config as loadEnv } from 'dotenv'
+// Load local env for CLI (generate:types, migrate) + tests. No-op on Vercel (platform env).
+loadEnv({ path: ['.env.local', '.env'] })
+
 import { vercelPostgresAdapter } from '@payloadcms/db-vercel-postgres'
 import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
@@ -8,6 +12,11 @@ import sharp from 'sharp'
 
 import { Users } from './collections/Users'
 import { Media } from './collections/Media'
+import { Brands } from './collections/Brands'
+import { Categories } from './collections/Categories'
+import { Ingredients } from './collections/Ingredients'
+import { Products } from './collections/Products'
+import { Variants } from './collections/Variants'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -27,7 +36,7 @@ export default buildConfig({
     },
   },
   // Single-locale English (i18n intentionally dropped — see JOURNEY 2026-07-15 / [[english-only-override]]).
-  collections: [Users, Media],
+  collections: [Users, Media, Brands, Categories, Ingredients, Products, Variants],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
