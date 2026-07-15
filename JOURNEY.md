@@ -293,3 +293,29 @@ Corrected a mislabel: §19 Phase 8 is **SEO/AEO** (not "reports" — that stays 
 **Deferred/flagged:** 2FA enforcement (§17.2, documented), load-test/backup as operational procedures (docs), blog + category/brand pages + dead-SKU redirects (from Phase 8). Reports/reconciliation-UI/period-close (from Phase 7). LocalBusiness geo/hours.
 
 **Next:** storefront redesign inspired by ghorerbazar.com (owner request 2026-07-15) — conversion landing + on-page COD order form PDP + related products + login, mobile-first + WhatsApp-friendly. Brainstorming the design first.
+
+---
+
+## 2026-07-16 · Storefront redesign (ghorerbazar-inspired)
+
+Owner pivot. Conversion-focused storefront inspired by ghorerbazar.com — front-end reskin + a new on-PDP order flow, **reusing all existing backend** (OTP, computeCheckoutTerms, placeOrder, EPS). Decisions (asked): English-only · on-PDP order form with inline OTP + advance/EPS · keep brand tokens (celadon/ink/paper/seal, Anek) + ghorerbazar layout · phone-OTP login. Spec: `docs/superpowers/specs/2026-07-15-storefront-redesign-design.md`.
+
+**Shipped:**
+- **Conversion UI kit** (`components/store/`): PriceTag (slash + −N%), TrustRow, WhatsAppFab, OrderForm, StickyOrderBar, LoginClient.
+- **Backend:** `/api/checkout/quote` (live terms — the form never computes numbers, #3), `/api/checkout/quick` (single-line placeOrder, same OTP/COD/EPS/#2 rules as /place), `getRelatedProducts`, `getOrdersByPhone` (safe fields only, #4.6).
+- **Pages:** landing restructure (hero / trust / best-sellers / why-buy / shop-all), PDP on-page **OrderForm** (qty → live quote → inline OTP → COD or EPS) + related products + mobile sticky bar, `/login` (phone OTP), `/account` (order tracking by verified phone), floating WhatsApp on every page.
+- **Local smoke test — green:** home/PDP/login/account/admin render; **full OTP→COD order placed end-to-end** (DKB-2607-00001, codAmount = grandTotal for Dhaka COD, #2); admin owner login sees orders + landed cost; RBAC live (orders/users staff-only, packer can't; owner can).
+
+**Adversarial verification (5 lenses) → 11 findings, all fixed:**
+- **CRITICAL #2** — a full-prepay (epsFull) order stored `codAmount = grandTotal − advance` instead of 0, so the courier would collect the full amount again (customer pays twice). Fixed at source in `placeOrder` (`codAmount = 0` for epsFull) — fixes /place *and* /quick — with a regression test. (Latent since Phase 7; the redesign made it reachable.)
+- **OTP retry** — after verify (which consumes the OTP), a failed placement left the buyer stuck re-verifying a consumed code. Now a verified buyer retries **placement** directly.
+- **FB in-app browser** — the form now hands back the `intent://` / `x-safari` escape links (§13.5) instead of navigating inside the broken webview.
+- Quote race guard (seq); 44px touch targets; input labels; focus-visible ring; OTP live region; **`--grey` darkened (#8e958f→#636863) for WCAG-AA contrast**; sticky bar clears the WhatsApp FAB + footer.
+
+**Non-negotiables:** **#2** (codAmount ≠ grandTotal, epsFull=0 — tested), **#3** (quote/place use only computeCheckoutTerms), **§17.1** (OTP-verified phone before placing), **#4.6** (account/related/quote leak no cost — verified), **#12/#29** (no fake reviews).
+
+**Known limitation / deferred:** an EPS-init 502 after order creation + a retry can create a duplicate pending order (pre-existing in /place too; the Phase-9 abandoned-order cron cancels + releases it within 60 min). Multi-variant products use the cheapest variant in the form (variant picker = follow-up).
+
+**Deploy blocker:** live Vercel is a **stale build with a broken/missing DB env** ([[vercel-deploy-blocker]]) — needs the owner's Vercel dashboard (auto-deploy + env vars + migrations). Verified locally instead; live smoke-test blocked until the owner fixes it.
+
+**Verified:** typecheck, build, lint (0 errors); local smoke test green; test suite green (bumped int-test timeouts — remote Neon latency was spiking to ~8× and timing out an unchanged accounting test).
