@@ -1,6 +1,7 @@
 export function SiteFooter() {
   return (
-    <footer className="mt-20 border-t border-grey/30">
+    <footer className="mt-20 border-t border-grey/30 pb-20 sm:pb-0">
+      {/* pb-20 (mobile) keeps the address/phone clear of the PDP sticky order bar. */}
       <div className="mx-auto grid max-w-6xl gap-6 px-4 py-10 sm:grid-cols-2">
         <div>
           <p className="text-base font-semibold text-celadon-deep">Decor&rsquo;s K-Beauty</p>

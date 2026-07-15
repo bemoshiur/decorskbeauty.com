@@ -10,21 +10,16 @@ export function SiteHeader() {
             Authentic Korean skincare · Banani
           </span>
         </Link>
-        <nav className="flex items-center gap-5 text-sm text-ink">
+        <nav className="flex items-center gap-4 text-sm text-ink sm:gap-5">
           <Link href="/" className="hover:text-celadon-deep">
             Shop
           </Link>
-          <Link href="/checkout" className="hover:text-celadon-deep">
-            Cart
+          <Link href="/account" className="hover:text-celadon-deep">
+            My orders
           </Link>
-          <a
-            href="https://wa.me/8801712113032"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-celadon-deep"
-          >
-            WhatsApp
-          </a>
+          <Link href="/login" className="rounded-[4px] border border-celadon-deep px-3 py-1.5 text-xs font-medium text-celadon-deep hover:bg-celadon/10">
+            Sign in
+          </Link>
         </nav>
       </div>
     </header>

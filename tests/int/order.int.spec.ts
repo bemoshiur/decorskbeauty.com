@@ -9,7 +9,7 @@ let payload: Payload
 
 const TITLE = 'TEST Order Product'
 const SKU = 'TEST-ORD-1'
-const PHONES = ['8801700000001', '8801700000002', '8801700000003']
+const PHONES = ['8801700000001', '8801700000002', '8801700000003', '8801700000004']
 
 async function cleanup() {
   const custs = await payload.find({ collection: 'customers', where: { phone: { in: PHONES } }, limit: 50, depth: 0 })
@@ -97,6 +97,20 @@ describe('Order placement + FEFO reservation (§7, §10.1, #2/#4)', () => {
     const txns = await payload.find({ collection: 'transactions', where: { merchantTransactionId: { equals: payment.merchantTransactionId } }, overrideAccess: true })
     expect(txns.docs[0]?.status).toBe('pending')
     expect(txns.docs[0]?.amount).toBe(200)
+  })
+
+  it('a full prepay (epsFull) order collects NOTHING on delivery — codAmount is 0, never grandTotal (#2)', async () => {
+    const { order, payment } = await placeOrder({
+      lines: [{ variantId, qty: 1 }],
+      zone: 'dhakaCity',
+      customer: { name: 'Prepay Buyer', phone: PHONES[3], address: 'Banani' },
+      paymentChoice: 'prepay',
+    })
+    expect(order.paymentMethod).toBe('epsFull')
+    expect(order.grandTotal).toBe(500 + 80) // 580 paid fully online
+    expect(order.codAmount).toBe(0) // courier collects nothing — else the customer pays twice
+    expect(payment.required).toBe(true)
+    expect(payment.amount).toBe(580) // full grandTotal charged via EPS
   })
 
   it('RTO restocks to the original lot and bumps cancelledCount (§9.4, #12)', async () => {

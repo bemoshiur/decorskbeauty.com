@@ -3,11 +3,13 @@ import type { Metadata } from 'next'
 import { RichText } from '@payloadcms/richtext-lexical/react'
 
 import type { Ingredient } from '@/payload-types'
-import { getProductBySlug, getActiveVariants, getPublishedProductSlugs, getFefoLotForVariant } from '@/lib/commerce'
-import { addToCartAction } from '../../cart-actions'
+import { getProductBySlug, getActiveVariants, getPublishedProductSlugs, getFefoLotForVariant, getRelatedProducts, effectivePrice } from '@/lib/commerce'
 import { ResponsiveImage } from '@/components/ResponsiveImage'
-import { Price } from '@/components/Price'
 import { AuthenticitySlip } from '@/components/AuthenticitySlip'
+import { ProductCard } from '@/components/ProductCard'
+import { PriceTag } from '@/components/store/PriceTag'
+import { OrderForm } from '@/components/store/OrderForm'
+import { StickyOrderBar } from '@/components/store/StickyOrderBar'
 import { JsonLd } from '@/components/JsonLd'
 import { graph, productJsonLd, faqPage, breadcrumb } from '@/lib/seo/jsonld'
 import { getReturnPolicy } from '@/lib/seo/settings'
@@ -41,16 +43,15 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   const variants = await getActiveVariants(product.id)
   const returnPolicy = await getReturnPolicy()
+  const related = await getRelatedProducts(product.id, 8)
   const brand = product.brand && typeof product.brand === 'object' ? product.brand : null
   const cheapest = variants[0]
+  const effPrice = cheapest ? effectivePrice(cheapest) : 0
   const fefoLot = cheapest ? await getFefoLotForVariant(cheapest.id) : null
   const hero = product.images?.[0]
   const preorder = product.fulfilmentMode === 'preOrder'
   const ingredients = (product.keyIngredients ?? []).filter(
     (i): i is Ingredient => typeof i === 'object',
-  )
-  const waText = encodeURIComponent(
-    `Hi, I'd like to order: ${product.title}${cheapest?.sku ? ` — SKU ${cheapest.sku}` : ''}`,
   )
 
   return (
@@ -99,11 +100,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               <p className="font-mono text-xs uppercase tracking-[0.12em] text-grey">{brand.name}</p>
             )}
             <h1 className="mt-1 text-2xl font-semibold leading-tight text-ink">{product.title}</h1>
-            {cheapest && (
-              <div className="mt-2 text-xl">
-                <Price amount={cheapest.mrp} sale={cheapest.salePrice} className="text-celadon-deep" />
-              </div>
-            )}
+            {cheapest && <PriceTag mrp={cheapest.mrp} sale={cheapest.salePrice} size="lg" className="mt-2" />}
           </div>
 
           {/* 3. Variant selector (display only in Phase 1; cart is Phase 3) */}
@@ -150,28 +147,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             )}
           </div>
 
-          {/* 6. Add to cart + WhatsApp (§7) */}
-          <div className="flex flex-wrap items-center gap-3">
-            {cheapest && (
-              <form action={addToCartAction}>
-                <input type="hidden" name="variantId" value={cheapest.id} />
-                <button
-                  type="submit"
-                  className="rounded-[4px] bg-celadon-deep px-5 py-2.5 text-sm text-paper transition-colors hover:bg-celadon"
-                >
-                  Add to cart
-                </button>
-              </form>
-            )}
-            <a
-              href={`https://wa.me/8801712113032?text=${waText}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-[4px] border border-celadon-deep px-5 py-2.5 text-sm text-celadon-deep transition-colors hover:bg-celadon/10"
-            >
-              Order on WhatsApp
-            </a>
-          </div>
+          {/* 6. On-page order form — COD + inline OTP + advance/EPS (redesign, §7/§17.1) */}
+          {cheapest && (
+            <OrderForm variantId={cheapest.id} unitPrice={effPrice} productTitle={product.title} sku={cheapest.sku} preorder={preorder} />
+          )}
 
           {/* 7. Short description */}
           {product.shortDescription && <p className="leading-relaxed text-ink">{product.shortDescription}</p>}
@@ -236,6 +215,19 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           </div>
         </section>
       )}
+
+      {/* Related products */}
+      {related.length > 0 && (
+        <section className="mt-12 border-t border-grey/30 pt-8">
+          <h2 className="mb-4 text-lg font-semibold text-ink">You may also like</h2>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {related.map((c) => <ProductCard key={c.product.id} card={c} />)}
+          </div>
+        </section>
+      )}
+
+      {/* Mobile sticky order bar */}
+      {cheapest && <StickyOrderBar price={effPrice} label={preorder ? 'Pre-order' : 'Order now'} />}
     </article>
   )
 }

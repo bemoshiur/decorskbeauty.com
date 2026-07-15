@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import { SiteHeader } from '@/components/SiteHeader'
 import { SiteFooter } from '@/components/SiteFooter'
 import { Analytics } from '@/components/Analytics'
+import { WhatsAppFab } from '@/components/store/WhatsAppFab'
 import { JsonLd } from '@/components/JsonLd'
 import { graph, organization, website } from '@/lib/seo/jsonld'
 import { anekLatin, martianMono } from './fonts'
@@ -29,6 +30,7 @@ export default async function StorefrontLayout({ children }: { children: React.R
         <SiteHeader />
         <main className="flex-1">{children}</main>
         <SiteFooter />
+        <WhatsAppFab />
       </body>
     </html>
   )

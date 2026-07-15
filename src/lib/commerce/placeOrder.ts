@@ -154,7 +154,9 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
       grandTotal: terms.grandTotal,
       advanceRequired: terms.advanceRequired,
       advancePaid: 0,
-      codAmount: terms.codAmount, // never grandTotal (#2)
+      // What the courier collects — NEVER grandTotal (#2). A full online prepay (epsFull) leaves
+      // nothing to collect on delivery, so codAmount is 0; otherwise it's grandTotal − advance.
+      codAmount: paymentMethod === 'epsFull' ? 0 : terms.codAmount,
       paymentMethod,
       paymentStatus: 'unpaid',
       fulfilmentStatus: isCod ? 'confirmed' : 'pending',

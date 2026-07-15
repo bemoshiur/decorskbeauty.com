@@ -12,7 +12,7 @@
   --color-celadon: #7fa893; /* Goryeo celadon, primary accent */
   --color-celadon-deep: #2f5d4a; /* headers, seals, active states */
   --color-seal: #c0362c; /* stamp red — RATIONED: authenticity seal + expiry warnings only */
-  --color-grey: #8e958f; /* meta, dividers, disabled */
+  --color-grey: #636863; /* meta, dividers, disabled — darkened from #8e958f to meet WCAG AA on paper */
 
   /* Type — Latin display/UI (Anek Latin) + evidential (Martian Mono) */
   --font-sans: var(--font-anek-latin), ui-sans-serif, system-ui, sans-serif;
