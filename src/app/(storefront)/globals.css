@@ -15,8 +15,8 @@
   --color-grey: #636863; /* meta, dividers, disabled — darkened from #8e958f to meet WCAG AA on paper */
 
   /* Type — Latin display/UI (Anek Latin) + evidential (Martian Mono) */
-  --font-sans: var(--font-anek-latin), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-martian-mono), ui-monospace, 'SFMono-Regular', monospace;
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, 'SFMono-Regular', monospace;
 
   /* Strict 4pt grid (§16.2) */
   --spacing: 0.25rem;
@@ -25,21 +25,35 @@
   --radius-control: 4px;
 }
 
+/* Neutral, high-contrast base with system dark mode (Vercel Commerce look). */
 :root {
-  color-scheme: light;
+  color-scheme: light dark;
 }
 
 html {
-  background-color: var(--color-paper);
-  color: var(--color-ink);
-  /* iOS: explicit tap highlight (§13.6) */
-  -webkit-tap-highlight-color: color-mix(in srgb, var(--color-celadon) 25%, transparent);
+  background-color: #ffffff;
+  color: #111827; /* neutral-900 */
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (prefers-color-scheme: dark) {
+  html {
+    background-color: #000000;
+    color: #ffffff;
+  }
 }
 
 body {
   font-family: var(--font-sans);
-  min-height: 100dvh; /* dvh not vh — iOS Safari toolbar collapse (§13.6) */
+  min-height: 100dvh; /* dvh not vh — iOS Safari toolbar collapse */
 }
+
+/* Auto-scrolling product carousel (home). */
+@keyframes carousel {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-carousel { animation: carousel 40s linear infinite; }
 
 /* §16.3: one orchestrated moment — the authenticity seal stamps in once on PDP load. */
 @keyframes seal-stamp {

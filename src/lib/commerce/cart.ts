@@ -49,6 +49,21 @@ export async function addToCart(variantId: number, qty = 1): Promise<void> {
   await payload.update({ collection: 'carts', id: cart.id, data: { items }, overrideAccess: true })
 }
 
+/** Set a line's quantity (qty ≤ 0 removes it). Mutation — server action / route handler only. */
+export async function setCartItemQty(variantId: number, qty: number): Promise<void> {
+  const token = await getCartToken()
+  if (!token) return
+  const payload = await getPayloadClient()
+  const { docs } = await payload.find({ collection: 'carts', where: { token: { equals: token } }, limit: 1, overrideAccess: true })
+  const cart = docs[0]
+  if (!cart) return
+  const items = (cart.items ?? [])
+    .map((i) => ({ variant: relId(i.variant) as number, qty: i.qty ?? 1 }))
+    .map((i) => (i.variant === variantId ? { ...i, qty: Math.max(0, Math.floor(qty)) } : i))
+    .filter((i) => i.qty > 0)
+  await payload.update({ collection: 'carts', id: cart.id, data: { items }, overrideAccess: true })
+}
+
 export async function getCartView(): Promise<CartView> {
   const token = await getCartToken()
   if (!token) return { token: null, items: [], subtotal: 0 }
