@@ -10,11 +10,23 @@ import { normalizeMsisdn } from '../types'
 export function gennetProvider(cfg: { baseUrl: string; apiToken: string; sid: string }): SmsProvider {
   const csmsId = () => `DKB${Date.now().toString(36)}${randomBytes(3).toString('hex')}`.slice(0, 20).toUpperCase()
 
+  // Accept either the domain (https://isms.gennet.com.bd) or the full endpoint URL — derive the
+  // origin so send-sms/balance/status all resolve, regardless of what's set in GENNET_BASE_URL.
+  const endpoint = (path: string) => {
+    let origin = cfg.baseUrl.replace(/\/+$/, '')
+    try {
+      origin = new URL(cfg.baseUrl).origin
+    } catch {
+      /* keep the trimmed string if it isn't a full URL */
+    }
+    return `${origin}/api/v3/${path}`
+  }
+
   return {
     name: 'gennet',
     async send(to, body): Promise<SmsResult> {
       try {
-        const res = await fetch(`${cfg.baseUrl.replace(/\/$/, '')}/api/v3/send-sms`, {
+        const res = await fetch(endpoint('send-sms'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
