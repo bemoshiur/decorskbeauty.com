@@ -1,5 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
+import { revalidateCatalogAfterChange, revalidateCatalogAfterDelete } from '@/lib/commerce/revalidate'
+
 /**
  * Variants are a SEPARATE collection, not an array on products — at 1,500 SKUs x size x shade
  * an array field will not survive (§4.1 / CLAUDE.md trap).
@@ -12,6 +14,10 @@ export const Variants: CollectionConfig = {
     defaultColumns: ['sku', 'product', 'mrp', 'availableQty', 'active'],
   },
   access: { read: () => true },
+  hooks: {
+    afterChange: [revalidateCatalogAfterChange],
+    afterDelete: [revalidateCatalogAfterDelete],
+  },
   fields: [
     { name: 'product', type: 'relationship', relationTo: 'products', required: true },
     {

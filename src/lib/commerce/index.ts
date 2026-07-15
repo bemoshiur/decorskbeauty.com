@@ -1,3 +1,10 @@
-// src/lib/commerce — computeCheckoutTerms, cart, pricing, cached data-access — the ONLY path the storefront reads through (§3)
-// Phase 0 placeholder; implemented in later phases.
-export {}
+// src/lib/commerce — the ONLY path the storefront reads catalog data through (§3).
+export {
+  listProductCards,
+  getProductBySlug,
+  getActiveVariants,
+  getPublishedProductSlugs,
+  effectivePrice,
+  type ProductCard,
+} from './products'
+export { CATALOG_TAG, productTag, categoryTag, brandTag } from './tags'

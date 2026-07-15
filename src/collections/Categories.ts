@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 
 import { slugField } from '@/fields/slug'
 import { seoField } from '@/fields/seo'
+import { revalidateCatalogAfterChange, revalidateCatalogAfterDelete } from '@/lib/commerce/revalidate'
 
 export const Categories: CollectionConfig = {
   slug: 'categories',
@@ -11,6 +12,10 @@ export const Categories: CollectionConfig = {
     defaultColumns: ['name', 'parent', 'slug'],
   },
   access: { read: () => true },
+  hooks: {
+    afterChange: [revalidateCatalogAfterChange],
+    afterDelete: [revalidateCatalogAfterDelete],
+  },
   fields: [
     // Display name is English (was localized in the spec; English-only build).
     { name: 'name', type: 'text', required: true },

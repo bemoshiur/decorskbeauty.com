@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 
 import { slugField } from '@/fields/slug'
 import { seoField } from '@/fields/seo'
+import { revalidateCatalogAfterChange, revalidateCatalogAfterDelete } from '@/lib/commerce/revalidate'
 
 export const PRODUCT_TYPES = [
   'cleanser',
@@ -44,6 +45,10 @@ export const Products: CollectionConfig = {
   },
   access: { read: () => true },
   versions: { drafts: true }, // provides _status draft/published (§4.1)
+  hooks: {
+    afterChange: [revalidateCatalogAfterChange],
+    afterDelete: [revalidateCatalogAfterDelete],
+  },
   fields: [
     // Title is ALWAYS English, never localized (locked business rule / non-negotiable #10).
     { name: 'title', type: 'text', required: true },
