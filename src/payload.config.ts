@@ -27,6 +27,7 @@ import { Customers } from './collections/Customers'
 import { Orders } from './collections/Orders'
 import { Transactions } from './collections/Transactions'
 import { Returns } from './collections/Returns'
+import { CapiQueue } from './collections/CapiQueue'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -64,6 +65,7 @@ export default buildConfig({
     Orders,
     Transactions,
     Returns,
+    CapiQueue,
   ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

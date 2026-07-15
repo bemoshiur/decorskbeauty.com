@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
   for (const order of docs) {
     const provider = order.courier?.provider
     const cid = order.courier?.consignmentId
-    if (!provider || !cid || !order.orderNumber) continue
+    if ((provider !== 'pathao' && provider !== 'steadfast') || !cid || !order.orderNumber) continue
     try {
       const status =
         provider === 'pathao'

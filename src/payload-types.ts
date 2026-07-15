@@ -84,6 +84,7 @@ export interface Config {
     orders: Order;
     transactions: Transaction;
     returns: Return;
+    capiQueue: CapiQueue;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -108,6 +109,7 @@ export interface Config {
     orders: OrdersSelect<false> | OrdersSelect<true>;
     transactions: TransactionsSelect<false> | TransactionsSelect<true>;
     returns: ReturnsSelect<false> | ReturnsSelect<true>;
+    capiQueue: CapiQueueSelect<false> | CapiQueueSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -876,6 +878,30 @@ export interface Return {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "capiQueue".
+ */
+export interface CapiQueue {
+  id: number;
+  eventName?: string | null;
+  eventId?: string | null;
+  payload?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  status?: ('pending' | 'sent' | 'failed') | null;
+  attempts?: number | null;
+  nextAttemptAt?: string | null;
+  error?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -965,6 +991,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'returns';
         value: number | Return;
+      } | null)
+    | ({
+        relationTo: 'capiQueue';
+        value: number | CapiQueue;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -1526,6 +1556,21 @@ export interface ReturnsSelect<T extends boolean = true> {
   refundAmount?: T;
   refundMethod?: T;
   status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "capiQueue_select".
+ */
+export interface CapiQueueSelect<T extends boolean = true> {
+  eventName?: T;
+  eventId?: T;
+  payload?: T;
+  status?: T;
+  attempts?: T;
+  nextAttemptAt?: T;
+  error?: T;
   updatedAt?: T;
   createdAt?: T;
 }

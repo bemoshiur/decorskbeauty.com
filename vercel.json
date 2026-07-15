@@ -1,5 +1,7 @@
 {
   "crons": [
-    { "path": "/api/cron/courier-sync", "schedule": "*/30 * * * *" }
+    { "path": "/api/cron/courier-sync", "schedule": "*/30 * * * *" },
+    { "path": "/api/cron/capi-drain", "schedule": "* * * * *" },
+    { "path": "/api/cron/sku-parity", "schedule": "0 3 * * *" }
   ]
 }

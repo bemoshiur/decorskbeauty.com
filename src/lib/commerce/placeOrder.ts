@@ -4,6 +4,7 @@ import { allocateFefo, type AllocatableLot, type LotStatus } from '@/lib/invento
 import { generateMerchantTransactionId } from '@/lib/integrations/eps/client'
 import { computeCheckoutTerms, type Zone } from './checkout'
 import { effectivePrice } from './products'
+import { enqueuePurchase } from './tracking'
 
 export type PlaceOrderInput = {
   lines: { variantId: number; qty: number }[]
@@ -176,6 +177,8 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
 
   // 8. Payment: COD needs none; EPS stages a pending transaction (verified in the callback).
   if (isCod) {
+    // COD confirms at placement (after OTP) → Purchase fires here (#9, §13.4).
+    await enqueuePurchase(payload, order.id)
     return { order, payment: { required: false, amount: 0, purpose: 'full' } }
   }
   const purpose: 'advance' | 'full' = paymentMethod === 'epsAdvance' ? 'advance' : 'full'

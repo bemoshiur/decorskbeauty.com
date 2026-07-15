@@ -3,6 +3,7 @@ import type { Payload } from 'payload'
 
 import { getPayloadClient } from '@/lib/payload'
 import { verifyPayment, normalizeStatus } from '@/lib/integrations/eps/client'
+import { enqueuePurchase } from './tracking'
 
 const relId = (rel: unknown): number | null =>
   rel == null ? null : typeof rel === 'object' ? ((rel as { id?: number }).id ?? null) : (rel as number)
@@ -97,7 +98,8 @@ export async function handleEpsCallback(req: NextRequest) {
         },
       })
     }
-    // Purchase event (Phase 6) + balanced journal (Phase 7) hook in here.
+    // Purchase fires at confirmation (#9, §13.4); balanced journal → Phase 7.
+    if (orderId) await enqueuePurchase(payload, orderId)
     return result(req, 'success', order?.orderNumber ?? undefined)
   }
 

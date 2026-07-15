@@ -1,5 +1,7 @@
 import type { Payload } from 'payload'
 
+import { enqueueOrderDelivered } from './tracking'
+
 const relId = (rel: unknown): number | null =>
   rel == null ? null : typeof rel === 'object' ? ((rel as { id?: number }).id ?? null) : (rel as number)
 
@@ -46,6 +48,7 @@ export async function markDelivered(payload: Payload, orderId: number) {
     data: { fulfilmentStatus: 'delivered', paymentStatus: order.paymentMethod === 'cod' ? 'paid' : order.paymentStatus, timeline: [...(order.timeline ?? []), { at: now(), actor: 'courier', event: 'delivered' }] },
   })
   await bumpCustomer(payload, order.customer, (c) => ({ deliveredCount: c.deliveredCount + 1, lifetimeValue: c.lifetimeValue + (order.grandTotal ?? 0) }))
+  await enqueueOrderDelivered(payload, orderId) // true-value event; gap vs Purchase = RTO rate (§13.4)
 }
 
 /** Returned / RTO (§9.4): restock to the ORIGINAL lots at original landed cost (#12), bump cancelledCount. */
