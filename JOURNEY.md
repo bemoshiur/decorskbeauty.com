@@ -93,3 +93,32 @@ Append-only build log. Newest at the bottom. Format per CLAUDE.md.
 **Verified:** typecheck, **16 tests** (landed cost = 135; receipt → `qtyAvailable` = 20 via #4; FEFO order/tiebreak/skip; idempotent receive), lint, build, Lighthouse (budgets hold); PDP EXP + `/verify` confirmed against real seeded lots (`CRX-921-2506` → Verified).
 
 **Next:** Phase 3 — Cart + checkout: `computeCheckoutTerms` with a unit test for **every** §1.1 branch (the hard gate), OTP, Pathao location cache, guest checkout. **Blocked on spec question C** (is ">৳5,000 → 30%" measured on subtotal or grandTotal?) — need the owner before finalizing the terms function.
+
+---
+
+## 2026-07-15 · Phase 3 · Cart + checkout
+
+**Shipped:**
+- **`computeCheckoutTerms` (§1.1)** — the single source of delivery/advance/COD (non-negotiable #3). **18 unit tests cover every branch** (zones, free-shipping boundary, >5,000, pre-order, mixed, boundaries) — the hard gate.
+- SMS provider interface + **console / gennet / alpha** adapters (§17.3). GenNet base URL still unknown → dev uses console.
+- **OTP** (§17.1): `otpChallenges` collection, `/api/otp/request` + `/verify`, hashed codes, 5-min expiry / 3 attempts / 15-min lock, rate limits (3/hr phone, 10/hr IP), signed HttpOnly phone-token cookie. Verified end-to-end.
+- `carts` collection (§4.3) + cookie-keyed cart lib + **Add to cart** on the PDP.
+- **One-page guest checkout**: cart + delivery-zone selector with **live `computeCheckoutTerms`** + phone/OTP. (Order placement + EPS = Phase 4; "Place order" is disabled pending it.)
+
+**Decisions:**
+- **">৳5,000 → 30%" is measured on grandTotal** incl. delivery (owner, question C).
+- **Pathao location cache + searchable combobox DEFERRED** — needs Pathao API creds; free-text address for now (§7's fallback field).
+- `customers` collection deferred to Phase 4 (created at order placement); the cart holds `phone` only for now.
+- **Security (CRITICAL, fixed):** `stockLots` was publicly readable via REST → leaked `landedCostPerUnit` (COGS). Now staff-only; the public `/verify` + PDP read server-side with `overrideAccess` and project only safe fields.
+
+**Non-negotiables touched:** **#3** — `computeCheckoutTerms` is the only place delivery/advance/COD numbers exist (18 tests + no magic numbers elsewhere).
+
+**Open:**
+- **Order placement + EPS payment + stock reservation = Phase 4.**
+- Pathao location cache/combobox needs Pathao creds.
+- `/verify` exposing scanned import docs publicly — flagged for the owner (§6.2 says show them, but a commercial invoice can reveal supplier/cost).
+- Abandoned-cart SMS, coupons, wishlist, `/checkout` Lighthouse (dynamic, needs a seeded cart) — later.
+
+**Verified:** typecheck, **34 tests** (incl. 18 §1.1 branches), lint (0 errors, boundary holds), build, OTP round-trip (request → wrong → correct → cookie → rate-limit 429), checkout renders.
+
+**Next:** Phase 4 — Payments. **Read the `eps-payment-gateway` skill first — do not write EPS from memory.** EPS hosted checkout (GetToken → InitializeEPS → verify via API No.3), `transactions`, idempotent success handler, COD path, in-app-browser interstitial + resume token, and order placement + stock reservation (§10.1).
