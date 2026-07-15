@@ -1,13 +1,20 @@
+import type { Metadata } from 'next'
+
 import { listProductCards } from '@/lib/commerce'
 import { ProductCard } from '@/components/ProductCard'
+import { JsonLd } from '@/components/JsonLd'
+import { graph, localBusiness, itemList } from '@/lib/seo/jsonld'
 
 export const revalidate = 300
+
+export const metadata: Metadata = { alternates: { canonical: '/' } }
 
 export default async function HomePage() {
   const cards = await listProductCards()
 
   return (
     <div className="mx-auto max-w-6xl px-4">
+      <JsonLd data={graph(localBusiness(), itemList(cards.map((c) => c.product)))} />
       {/* Hero — the thesis (§16.1): prove it's real, then sell. */}
       <section className="border-b border-grey/30 py-12 sm:py-16">
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-grey">Banani · Dhaka</p>

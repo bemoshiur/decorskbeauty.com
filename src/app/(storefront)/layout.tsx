@@ -4,6 +4,8 @@ import type { Metadata } from 'next'
 import { SiteHeader } from '@/components/SiteHeader'
 import { SiteFooter } from '@/components/SiteFooter'
 import { Analytics } from '@/components/Analytics'
+import { JsonLd } from '@/components/JsonLd'
+import { graph, organization, website } from '@/lib/seo/jsonld'
 import { anekLatin, martianMono } from './fonts'
 import './globals.css'
 
@@ -21,6 +23,8 @@ export default async function StorefrontLayout({ children }: { children: React.R
   return (
     <html lang="en" className={`${anekLatin.variable} ${martianMono.variable}`}>
       <body className="flex min-h-[100dvh] flex-col">
+        {/* Site-wide identity graph on every page (§14.2). */}
+        <JsonLd data={graph(organization(), website())} />
         <Analytics />
         <SiteHeader />
         <main className="flex-1">{children}</main>

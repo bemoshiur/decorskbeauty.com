@@ -8,6 +8,9 @@ import { addToCartAction } from '../../cart-actions'
 import { ResponsiveImage } from '@/components/ResponsiveImage'
 import { Price } from '@/components/Price'
 import { AuthenticitySlip } from '@/components/AuthenticitySlip'
+import { JsonLd } from '@/components/JsonLd'
+import { graph, productJsonLd, faqPage, breadcrumb } from '@/lib/seo/jsonld'
+import { getReturnPolicy } from '@/lib/seo/settings'
 
 export const revalidate = 300
 
@@ -27,6 +30,7 @@ export async function generateMetadata({
   return {
     title: p.seo?.metaTitle ?? p.title,
     description: p.seo?.metaDescription ?? p.shortDescription ?? undefined,
+    alternates: { canonical: `/products/${slug}` }, // self-referencing canonical (§14.1)
   }
 }
 
@@ -36,6 +40,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   if (!product) notFound()
 
   const variants = await getActiveVariants(product.id)
+  const returnPolicy = await getReturnPolicy()
   const brand = product.brand && typeof product.brand === 'object' ? product.brand : null
   const cheapest = variants[0]
   const fefoLot = cheapest ? await getFefoLotForVariant(cheapest.id) : null
@@ -50,6 +55,19 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   return (
     <article className="mx-auto max-w-6xl px-4 py-8">
+      {/* Structured data (§14.2): Product+Offer (SKU #1, shippingDetails, returns), FAQPage, breadcrumb.
+          No AggregateRating — there are no approved reviews to emit one from (#12/#29). */}
+      <JsonLd
+        data={graph(
+          productJsonLd({ product, variants, returnPolicy }),
+          faqPage(product.faq),
+          breadcrumb([
+            { name: 'Home', path: '/' },
+            ...(brand ? [{ name: brand.name, path: `/products/${product.slug}` }] : []),
+            { name: product.title, path: `/products/${product.slug}` },
+          ]),
+        )}
+      />
       <div className="grid gap-8 lg:grid-cols-2">
         {/* 1. Image gallery */}
         <div className="flex flex-col gap-3">

@@ -16,6 +16,7 @@ export {
   type CartForTerms,
   type CheckoutTerms,
 } from './checkout'
+export { listIngredients, getIngredientBySlug, getIngredientSlugs } from './ingredients'
 export { CATALOG_TAG, productTag, categoryTag, brandTag } from './tags'
 export {
   getFefoLotForVariant,
