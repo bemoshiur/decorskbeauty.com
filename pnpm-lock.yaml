@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@aws-sdk/client-s3':
+        specifier: ^3.1088.0
+        version: 3.1088.0
       '@payloadcms/db-vercel-postgres':
         specifier: 3.86.0
         version: 3.86.0(@types/pg@8.11.6)(payload@3.86.0(bufferutil@4.1.0)(graphql@16.8.1)(typescript@5.7.3))
