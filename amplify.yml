@@ -14,6 +14,12 @@ frontend:
         # migrations out-of-band from a trusted machine (pnpm migrate) or a one-off job.
     build:
       commands:
+        # Amplify injects env vars at BUILD time only — the Next.js SSR compute (Lambda) does NOT
+        # receive them at runtime. Bake the server-side vars into .env.production so `next build`
+        # loads them and Next resolves them at runtime. AWS-documented workaround:
+        # https://docs.aws.amazon.com/amplify/latest/userguide/ssr-environment-variables.html
+        # (Hardening follow-up: move secrets to SSM/Secrets Manager + an SSR compute IAM role.)
+        - env | grep -E '^(PAYLOAD_SECRET|DATABASE_URL|JWT_SECRET|CRON_SECRET|GENNET_BASE_URL|GENNET_API_KEY|GENNET_SENDER_ID|SMS_PROVIDER|S3_BUCKET|S3_REGION|S3_ACCESS_KEY_ID|S3_SECRET_ACCESS_KEY|NEXT_PUBLIC_SITE_URL)=' >> .env.production || true
         # `next build` (the script already sets NODE_OPTIONS --max-old-space-size=8000).
         - pnpm run build
   artifacts:
