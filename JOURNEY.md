@@ -321,11 +321,11 @@ Owner pivot. Conversion-focused storefront inspired by ghorerbazar.com — front
 **Verified:** typecheck, build, lint (0 errors); local smoke test green; test suite green (bumped int-test timeouts — remote Neon latency was spiking to ~8× and timing out an unchanged accounting test).
 
 ## 2026-07-16 · Deploy · Vercel → AWS Amplify (LIVE)
-**Shipped:** Decor's K-Beauty is live on **AWS Amplify** at https://main.d1k50729slq54u.amplifyapp.com (account 739275468267, ap-southeast-1, app `d1k50729slq54u`, WEB_COMPUTE). Vercel abandoned. Smoke test green: home/`/search`(12 products)/PDP(prices+12 imgs+add-to-cart)/`/admin`/`/login`/media-from-S3 all 200, no runtime errors.
+**Shipped:** Decor's K-Beauty is live on **AWS Amplify** (ap-southeast-1, WEB_COMPUTE; account #, app id, and default URL are in the private memory, not this public repo). Vercel abandoned. Smoke test green: home/`/search`(12 products)/PDP(prices+12 imgs+add-to-cart)/`/admin`/`/login`/media-from-S3 all 200, no runtime errors.
 **Decisions/changes:**
 - **Next 16.2.6 → 15.4.11** — Amplify SSR supports Next ≤15; Payload 3.86 peer range allows 15.4.x; no Next-16-only APIs used. (Next 16 built but every SSR route 500'd on Amplify's Turbopack path — missing transitive deps of externalized pkgs.)
 - **next.config** externalizes Payload server pkgs (payload/pg/graphql/pino/drizzle/db-vercel-postgres) so the Next-15 webpack build resolves; `revalidateTag(tag)` single-arg (dropped Next-16 'max').
-- **Media Vercel Blob → S3** (`@payloadcms/storage-s3`, bucket `decorskbeauty-media` BPA-on private + `/api/media/file` proxy, least-priv IAM user `dkb-media-s3`); 84 files migrated; serverURL stays relative.
+- **Media Vercel Blob → S3** (`@payloadcms/storage-s3`, a private BPA-on bucket + `/api/media/file` proxy, a least-priv IAM user; names in private memory); 84 files migrated; serverURL stays relative.
 - **amplify.yml** build spec (corepack pnpm@10.33.3, generate:importmap, no build-time migrate) stored ON the app via update-app (repo file is not auto-used). Crons removed from vercel.json (→ EventBridge, deferred).
 - **Runtime env fix:** Amplify SSR compute gets no env at runtime → bake server vars into `.env.production` at build (AWS-documented). Without it Payload threw "missing secret key", all dynamic routes 500'd.
 **Non-negotiables touched:** none of #1–#13 semantics changed. #4 (media via storage adapter) now S3. Secrets baked into build artifact (owner authorized) — hardening TODO: SSM + SSR compute role.
