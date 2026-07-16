@@ -5,7 +5,7 @@ import { generateBlurDataURL } from './hooks/generateBlurDataURL'
 /**
  * Media pipeline (§15.4). Responsive AVIF+WebP set pre-generated ONCE on upload; the storefront
  * serves those URLs directly (unoptimized) — never a per-viewport per-visitor transform.
- * With BLOB_READ_WRITE_TOKEN the plugin puts these on Vercel Blob; otherwise local disk.
+ * With S3_BUCKET the plugin puts these on S3 (served via the /api/media/file proxy); otherwise local disk.
  */
 export const Media: CollectionConfig = {
   slug: 'media',

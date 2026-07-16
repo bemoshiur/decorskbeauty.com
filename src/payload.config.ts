@@ -3,7 +3,7 @@ import { config as loadEnv } from 'dotenv'
 loadEnv({ path: ['.env.local', '.env'] })
 
 import { vercelPostgresAdapter } from '@payloadcms/db-vercel-postgres'
-import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
+import { s3Storage } from '@payloadcms/storage-s3'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig } from 'payload'
@@ -40,7 +40,7 @@ const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
 const isProd = process.env.NODE_ENV === 'production'
-const blobToken = process.env.BLOB_READ_WRITE_TOKEN
+const s3Bucket = process.env.S3_BUCKET
 
 export default buildConfig({
   // Leave serverURL undefined so Payload emits RELATIVE media URLs (/api/media/file/...), which
@@ -101,14 +101,30 @@ export default buildConfig({
   }),
   sharp,
   plugins: [
-    // Vercel Blob in every env that has a token; falls back to local disk otherwise
-    // so Phase 0 (no token yet) still runs. Pre-generated responsive set comes in Phase 1 (§15.4).
-    ...(blobToken
+    // S3 in every env that names a bucket (Amplify prod); falls back to Payload local disk otherwise
+    // so Phase 0 / dev / tests still run. `collections: { media: true }` uses an empty key prefix, so
+    // objects are keyed by the exact filename and Payload keeps emitting RELATIVE /api/media/file/<name>
+    // URLs (serverURL stays undefined — see the note above; the bucket can stay private behind that
+    // proxy route). Credentials come from env only when present (local CLI: migrate/seed); on Amplify
+    // SSR compute, leave S3_ACCESS_KEY_ID/S3_SECRET_ACCESS_KEY set so the app authenticates as its own
+    // least-privileged IAM principal. Pre-generated responsive set comes in Phase 1 (§15.4).
+    ...(s3Bucket
       ? [
-          vercelBlobStorage({
+          s3Storage({
             enabled: true,
             collections: { media: true },
-            token: blobToken,
+            bucket: s3Bucket,
+            config: {
+              region: process.env.S3_REGION,
+              ...(process.env.S3_ACCESS_KEY_ID && process.env.S3_SECRET_ACCESS_KEY
+                ? {
+                    credentials: {
+                      accessKeyId: process.env.S3_ACCESS_KEY_ID,
+                      secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
+                    },
+                  }
+                : {}),
+            },
           }),
         ]
       : []),

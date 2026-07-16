@@ -8,11 +8,11 @@ import { CATALOG_TAG } from './tags'
  */
 const bust = async (slug?: unknown) => {
   try {
-    // Best-effort instant bust. Next 16's revalidateTag takes a cache-life profile; the ISR TTL
-    // on each read (see products.ts) is the guaranteed freshness backstop if this no-ops here.
+    // Best-effort instant bust (Next 15 revalidateTag(tag) — single arg). The ISR TTL on each read
+    // (see products.ts) is the guaranteed freshness backstop if this no-ops here.
     const { revalidateTag } = await import('next/cache')
-    revalidateTag(CATALOG_TAG, 'max')
-    if (typeof slug === 'string' && slug) revalidateTag(`product:${slug}`, 'max')
+    revalidateTag(CATALOG_TAG)
+    if (typeof slug === 'string' && slug) revalidateTag(`product:${slug}`)
   } catch {
     // outside a request context (CLI/seed) there's nothing to revalidate
   }

@@ -1,0 +1,34 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        # pnpm is NOT preinstalled in the Amplify build image — activate the pinned version via corepack.
+        - corepack enable
+        - corepack prepare pnpm@10.33.3 --activate
+        - pnpm install --frozen-lockfile
+        # Payload's admin import map is generated, not committed — regenerate it (does NOT touch the DB).
+        - pnpm generate:importmap
+        # NOTE: never run `pnpm migrate` here. A build-time Payload/Neon migrate on an already-provisioned
+        # DB fails/hangs and blocks every deploy (the exact bug removed on Vercel, commit f7da16f). Run
+        # migrations out-of-band from a trusted machine (pnpm migrate) or a one-off job.
+    build:
+      commands:
+        # `next build` (the script already sets NODE_OPTIONS --max-old-space-size=8000).
+        - pnpm run build
+  artifacts:
+    # MUST be .next for Next.js SSR (WEB_COMPUTE) — Amplify reads the compute + static output from here.
+    baseDirectory: .next
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+      - .next/cache/**/*
+# Required Amplify environment variables (set on the app + main branch, present at BUILD and RUNTIME):
+#   PAYLOAD_SECRET, DATABASE_URL (Neon POOLED -pooler host), NEXT_PUBLIC_SITE_URL, CRON_SECRET,
+#   S3_BUCKET, S3_REGION, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY,
+#   GENNET_BASE_URL, GENNET_API_KEY, plus the EPS / Pathao / Steadfast keys.
+# Build image: set the Amplify build Node version to 22 (Amplify SSR dropped Node 18; needs 20/22/24).
+# Build memory: default STANDARD_8GB is borderline for `next build`; raise the app buildComputeType to
+#   LARGE_16GB if the build OOMs.
