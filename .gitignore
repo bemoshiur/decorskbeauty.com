@@ -62,3 +62,6 @@ node_modules/
 # local visual-check artifacts
 /homepage-*.jpeg
 .playwright-mcp/
+
+# local super-admin credentials (never commit)
+ADMIN_CREDENTIALS.txt

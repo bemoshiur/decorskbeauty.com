@@ -51,20 +51,35 @@ Break any of these and the build is wrong, no matter how good the code is.
 
 ## Design tokens
 
-Do not introduce a colour outside this set. Do not reach for pastel pink; that is the category default and it is exactly what the fake sellers look like.
+**Source of truth is `src/app/(storefront)/globals.css` `@theme`** (evolved 2026-07-17, owner-directed:
+premium, animated, "Webflow-template" look with tasteful colour + gradients — see
+`docs/superpowers/plans/2026-07-17-premium-redesign.md`). This SUPERSEDES the old restrained 6-colour
+set — do NOT "fix" the storefront back to the neutral/6-colour palette; that is a regression.
+
+Still true: celadon greens are the brand anchor, and **no pastel pink** (the fake-seller default).
+The evolved system keeps celadon/paper/ink and ADDS rationed warm/cool accents used only in gradients
+and merchandising badges:
 
 ```
---paper        #F2F4F1
---ink          #14181A
---celadon      #7FA893
---celadon-deep #2F5D4A
---seal         #C0362C   /* rationed: authenticity seal + expiry warnings ONLY */
---grey         #8E958F
+neutrals : --paper #F2F4F1  --cloud #FBFCFB  --mist #E9EEE9  --ink #14181A  --ink-soft #37413D  --grey #636863  --line #DDE4DE
+brand    : --celadon #7FA893  --celadon-soft #A9C6B6  --celadon-deep #2F5D4A  --celadon-ink #1E3D30
+accents  : --apricot #F5C9A6  --rose-clay #E39B8C  --lilac #CFC9F0  --sky #A9D8E4  --honey #E9B949   (gradients/badges only)
+alert    : --seal #C0362C   (rationed: authenticity seal + expiry ONLY)
+gradients: .mesh-hero / .mesh-mint / .mesh-bloom (aurora), .grad-cta, .text-gradient   (utilities in globals.css)
 ```
 
-Type: **Anek Bangla** + **Anek Latin** (same skeleton, one bilingual voice) + **Martian Mono** (batch codes, EXP, SKU, prices, tracking).
+Type: **Fraunces** (`--font-display`, editorial serif → headlines/section titles) + **Geist Sans**
+(`--font-sans`, UI/body) + **Geist Mono** (`--font-mono`, prices/SKU/batch/tracking). (The old Anek +
+Martian Mono spec is retired; English-only build.)
 
-Signature component: **the authenticity slip** on every PDP. Batch code, MFG, EXP, import lot, verify link, in Martian Mono with a red seal. Proof before persuasion. It is the whole brand argument.
+Motion: **framer-motion** via `MotionProvider` (LazyMotion) + the `Reveal`/`RevealGroup` scroll-reveal
+islands — every animation honours `prefers-reduced-motion`. Reuse the primitives in
+`src/components/ui/**`, `src/components/motion/**`, `src/components/shop/**`; the homepage is
+admin-managed blocks (`src/components/home/blocks/**`) rendered by `BlockRenderer`.
+
+Signature component: **the authenticity proof** — a homepage "why 100% authentic" section + a PDP
+authenticity assurance line (verify link). Real batch/lot data is NOT shown publicly (owner call);
+show the verify CTA, keep the mono-slip visual as generic evidence. Proof before persuasion.
 
 ---
 
