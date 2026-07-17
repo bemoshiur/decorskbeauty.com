@@ -6,7 +6,7 @@ import { Navbar } from '@/components/commerce/navbar'
 import { Analytics } from '@/components/Analytics'
 import { JsonLd } from '@/components/JsonLd'
 import { graph, organization, website } from '@/lib/seo/jsonld'
-import { GeistSans, GeistMono } from './fonts'
+import { GeistSans, GeistMono, fraunces } from './fonts'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 
 export default async function StorefrontLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
+    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable} ${fraunces.variable}`}>
       <body className="flex min-h-[100dvh] flex-col bg-white text-black selection:bg-blue-600 selection:text-white dark:bg-black dark:text-white">
         <JsonLd data={graph(organization(), website())} />
         <Analytics />
