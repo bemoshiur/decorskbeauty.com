@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ShieldCheck, Truck, RotateCcw } from 'lucide-react'
+import { ShieldCheck, Truck, RotateCcw, ShoppingBag } from 'lucide-react'
 import { OrderForm } from '@/components/store/OrderForm'
 import { Badge } from '@/components/ui/Badge'
 import { cn } from '@/lib/cn'
@@ -36,7 +36,24 @@ export function BuyPanel({
   freeShip: string
 }) {
   const [selectedId, setSelectedId] = useState(variants[0]?.id)
+  const [adding, setAdding] = useState(false)
   const selected = variants.find((v) => v.id === selectedId) ?? variants[0]
+
+  // Secondary path: add to cart (for buying several items together), then open the drawer.
+  async function addToCart() {
+    if (!selected) return
+    setAdding(true)
+    try {
+      await fetch('/api/cart', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ action: 'add', variantId: selected.id, qty: 1 }),
+      })
+      window.dispatchEvent(new Event('cart:open'))
+    } finally {
+      setAdding(false)
+    }
+  }
   const discount = selected && selected.mrp > selected.price ? Math.round(((selected.mrp - selected.price) / selected.mrp) * 100) : 0
   // Honesty: never show a "SALE" badge unless there's an actual discount (trust-first brand).
   const shownBadge = badge === 'sale' && discount === 0 ? null : badge
@@ -97,6 +114,17 @@ export function BuyPanel({
           </div>
         </div>
       )}
+
+      {/* Secondary path: add to cart to buy several items together. */}
+      <button
+        type="button"
+        onClick={addToCart}
+        disabled={adding}
+        className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-cloud text-sm font-semibold text-celadon-ink ring-1 ring-line transition-colors hover:ring-celadon disabled:opacity-60"
+      >
+        <ShoppingBag className="h-4 w-4" aria-hidden />
+        {adding ? 'Adding…' : 'Add to cart'}
+      </button>
 
       {/* COD-first order form (owns quote/OTP/order). id target for the mobile sticky bar. */}
       <div id="order-form" className="rounded-card bg-cloud p-4 ring-1 ring-line shadow-soft sm:p-5">
