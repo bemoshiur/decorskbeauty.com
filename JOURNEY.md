@@ -366,3 +366,23 @@ charges. Design tokens section in CLAUDE.md updated so the evolved system isn't 
 **Verified:** typecheck + build (60/60) + 115 tests green; homepage live (Amplify job 7); PDP deploying
 (job 8). Infra identifiers kept in private memory, not this public repo.
 **Next:** finish PDP deploy verify; then OG images, order SMS, image/skeleton polish.
+
+## 2026-07-18 · Ops · Scheduled jobs on Amplify (EventBridge → Lambda → /api/cron/*)
+**Shipped:** the five `/api/cron/*` routes are now actually scheduled. Amplify Hosting has no built-in
+cron (this is why Vercel's `vercel.json` crons didn't carry over), so they run via **EventBridge
+Scheduler → a thin invoker Lambda → the route** (Bearer `CRON_SECRET`, exactly as the routes expect).
+Source + deploy/verify doc versioned under `infra/cron-lambda/`.
+**Cadence:** courier-sync every 30m (BD webhooks drop — the reconcile is not optional), capi-drain every
+15m, release-stale every 30m (`STALE_MINUTES=60` → reservations freed within the hour), sku-parity 02:00
+and expiry-scan 02:30 Asia/Dhaka daily.
+**Verified:** live test-invoke of the read-only `sku-parity` route returned HTTP 200
+`{checked:12, mismatches:[], alert:false}` — end-to-end chain works and the SKU spine (#1) is clean in
+production. All 5 schedules created ENABLED.
+**Decisions:** Lambda invoker (not a direct EventBridge API-Destination) because API-Destination caps the
+call at 5s and the reconcile/drain/scan jobs need longer; the Lambda also gives per-run CloudWatch logs.
+**Non-negotiables:** none changed — the routes and their tested core logic (`cancelStaleOrders`,
+`runExpiryScan`, CAPI drain, courier reconcile) are unchanged; this only adds the trigger. Account-scoped
+ARNs/IDs kept in private memory + placeholder'd in the repo doc, not committed.
+**Open:** Lambda `APP_URL` points at the amplifyapp.com origin — repoint to https://decorskbeauty.com when
+the custom domain lands (owner deferred the domain). Secret hardening (SSM vs baked/Lambda-env) still open.
+**Next:** owner-directed — custom domain when ready, or continue storefront polish.
