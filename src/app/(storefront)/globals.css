@@ -42,7 +42,7 @@
   --spacing: 0.25rem; /* 4pt grid */
   --radius-control: 0.625rem; /* 10px controls */
   --radius-card: 1.25rem; /* 20px cards */
-  --radius-xl: 1.75rem; /* 28px feature panels */
+  --radius-feature: 1.75rem; /* 28px feature panels (renamed to avoid clobbering built-in rounded-xl) */
   --radius-pill: 999px;
 
   /* ---- Shadows (soft, premium) ---- */
