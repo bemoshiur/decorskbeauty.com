@@ -7,11 +7,13 @@ import { ChevronRight, ShieldCheck, Sparkles } from 'lucide-react'
 import type { Ingredient, Product } from '@/payload-types'
 import {
   getProductBySlug, getActiveVariants, getPublishedProductSlugs, getRelatedProducts,
-  listProductCardsByIds, getSiteSettings, effectivePrice,
+  listProductCardsByIds, getSiteSettings, effectivePrice, getReviewSummary, listApprovedReviews,
 } from '@/lib/commerce'
 import { StoreGallery } from '@/components/shop/StoreGallery'
 import { BuyPanel, type BuyVariant } from '@/components/shop/BuyPanel'
 import { ProductCard } from '@/components/shop/ProductCard'
+import { ProductReviews } from '@/components/shop/ProductReviews'
+import { ReviewStars } from '@/components/shop/ReviewStars'
 import { StickyOrderBar } from '@/components/store/StickyOrderBar'
 import { Section } from '@/components/ui/Section'
 import { Container } from '@/components/ui/Container'
@@ -68,10 +70,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const product = await getProductBySlug(slug)
   if (!product) notFound()
 
-  const [variants, returnPolicy, settings] = await Promise.all([
+  const [variants, returnPolicy, settings, reviewSummary, reviews] = await Promise.all([
     getActiveVariants(product.id),
     getReturnPolicy(),
     getSiteSettings(),
+    getReviewSummary(product.id),
+    listApprovedReviews(product.id),
   ])
 
   // cross-sell: curated first, else algorithmic related
@@ -103,7 +107,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     <>
       <JsonLd
         data={graph(
-          productJsonLd({ product, variants, returnPolicy }),
+          productJsonLd({ product, variants, returnPolicy, reviewSummary, reviews }),
           faqPage(product.faq),
           breadcrumb([
             { name: 'Home', path: '/' },
@@ -130,6 +134,13 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <StoreGallery images={images} />
         </div>
         <div>
+          {reviewSummary.count > 0 && (
+            <a href="#reviews" className="mb-3 inline-flex items-center gap-2 text-sm text-ink-soft transition-colors hover:text-celadon-deep">
+              <ReviewStars rating={reviewSummary.average} size="sm" />
+              <span className="font-medium text-ink">{reviewSummary.average.toFixed(1)}</span>
+              <span className="text-grey">· {reviewSummary.count} review{reviewSummary.count === 1 ? '' : 's'}</span>
+            </a>
+          )}
           <BuyPanel
             productTitle={product.title}
             brand={brand}
@@ -201,6 +212,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           )}
         </div>
       </Section>
+
+      {/* Reviews (AggregateRating shows only with real approved reviews — #12) */}
+      <ProductReviews slug={slug} summary={reviewSummary} reviews={reviews} />
 
       {/* Cross-sell */}
       {related.length > 0 && (

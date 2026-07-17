@@ -35,6 +35,7 @@ import { FiscalPeriods } from './collections/FiscalPeriods'
 import { CourierPayouts } from './collections/CourierPayouts'
 import { EpsSettlements } from './collections/EpsSettlements'
 import { Testimonials } from './collections/Testimonials'
+import { Reviews } from './collections/Reviews'
 import { Settings } from './globals/Settings'
 import { Homepage } from './globals/Homepage'
 import { SiteSettings } from './globals/SiteSettings'
@@ -88,6 +89,7 @@ export default buildConfig({
     CourierPayouts,
     EpsSettlements,
     Testimonials,
+    Reviews,
   ],
   globals: [Settings, SiteSettings, Homepage],
   editor: lexicalEditor(),

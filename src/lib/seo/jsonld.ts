@@ -1,11 +1,14 @@
 import type { Brand, Ingredient, Product, Variant } from '@/payload-types'
+import type { ReviewCard, ReviewSummary } from '@/lib/commerce/reviews'
 import { absUrl, imageUrl, siteUrl } from './urls'
 import { shippingDetails, merchantReturnPolicy, type ReturnPolicyConfig } from './shipping'
 
 /**
  * JSON-LD builders (§14.2). Pure functions returning plain objects rendered by <JsonLd>. Every
- * absolute URL flows through urls.ts. AggregateRating is DELIBERATELY absent — it renders only from
- * real approved reviews, and there is no reviews collection yet, so it can never be faked (#12/#29).
+ * absolute URL flows through urls.ts. AggregateRating / Review render ONLY from the reviewSummary +
+ * reviews the caller passes, which come exclusively from APPROVED rows in the reviews collection
+ * (getReviewSummary / listApprovedReviews). With zero approved reviews the caller passes count 0 and no
+ * rating is emitted — so a star rating can never be seeded or faked (#12/#29).
  */
 export const ORG_ID = (site = siteUrl()) => `${site}/#organization`
 export const WEBSITE_ID = (site = siteUrl()) => `${site}/#website`
@@ -102,6 +105,8 @@ export function productJsonLd(args: {
   product: Product
   variants: Variant[]
   returnPolicy?: ReturnPolicyConfig
+  reviewSummary?: ReviewSummary
+  reviews?: ReviewCard[]
   site?: string
 }): object | null {
   const site = args.site ?? siteUrl()
@@ -127,6 +132,34 @@ export function productJsonLd(args: {
     hasMerchantReturnPolicy: ret,
   }))
 
+  // #12/#29: rating renders ONLY from real approved reviews. count === 0 → no aggregateRating node at all.
+  const summary = args.reviewSummary
+  const ratingBlock =
+    summary && summary.count > 0
+      ? {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: summary.average,
+            reviewCount: summary.count,
+            bestRating: 5,
+            worstRating: 1,
+          },
+        }
+      : {}
+  const reviewBlock =
+    args.reviews && args.reviews.length
+      ? {
+          review: args.reviews.slice(0, 10).map((r) => ({
+            '@type': 'Review',
+            reviewRating: { '@type': 'Rating', ratingValue: r.rating, bestRating: 5, worstRating: 1 },
+            author: { '@type': 'Person', name: r.authorName },
+            ...(r.title ? { name: r.title } : {}),
+            reviewBody: r.body,
+            datePublished: r.createdAt,
+          })),
+        }
+      : {}
+
   const prices = variants.map((v) => price(v))
   const offerBlock =
     variants.length === 1
@@ -150,7 +183,9 @@ export function productJsonLd(args: {
     sku: variants[0]?.sku, // primary SKU (#1)
     ...(brand ? { brand: { '@type': 'Brand', name: brand.name } } : {}),
     ...(offerBlock ? { offers: offerBlock } : {}),
-    // NO aggregateRating — only real approved reviews may emit one (#12/#29).
+    // aggregateRating / review appear ONLY when real approved reviews exist (#12/#29) — see ratingBlock.
+    ...ratingBlock,
+    ...reviewBlock,
   }
 }
 

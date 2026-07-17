@@ -92,6 +92,7 @@ export interface Config {
     courierPayouts: CourierPayout;
     epsSettlements: EpsSettlement;
     testimonials: Testimonial;
+    reviews: Review;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -124,6 +125,7 @@ export interface Config {
     courierPayouts: CourierPayoutsSelect<false> | CourierPayoutsSelect<true>;
     epsSettlements: EpsSettlementsSelect<false> | EpsSettlementsSelect<true>;
     testimonials: TestimonialsSelect<false> | TestimonialsSelect<true>;
+    reviews: ReviewsSelect<false> | ReviewsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -1146,6 +1148,45 @@ export interface Testimonial {
   createdAt: string;
 }
 /**
+ * Real customer reviews. Only Approved reviews appear on the storefront and count toward the star rating (#12). Do not create fake reviews.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reviews".
+ */
+export interface Review {
+  id: number;
+  product: number | Product;
+  /**
+   * 1–5 stars.
+   */
+  rating: number;
+  title?: string | null;
+  body: string;
+  authorName: string;
+  /**
+   * Private. Matched against real orders to set Verified purchase; never shown publicly.
+   */
+  authorPhone?: string | null;
+  /**
+   * Private. Submission IP (rate-limiting only).
+   */
+  authorIp?: string | null;
+  /**
+   * Only Approved is shown on the storefront.
+   */
+  status: 'pending' | 'approved' | 'rejected';
+  /**
+   * Auto-set when the phone matched a delivered/paid order for this product.
+   */
+  verifiedPurchase?: boolean | null;
+  /**
+   * Internal only.
+   */
+  adminNote?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -1268,6 +1309,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'testimonials';
         value: number | Testimonial;
+      } | null)
+    | ({
+        relationTo: 'reviews';
+        value: number | Review;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -1989,6 +2034,24 @@ export interface TestimonialsSelect<T extends boolean = true> {
   approved?: T;
   featured?: T;
   order?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reviews_select".
+ */
+export interface ReviewsSelect<T extends boolean = true> {
+  product?: T;
+  rating?: T;
+  title?: T;
+  body?: T;
+  authorName?: T;
+  authorPhone?: T;
+  authorIp?: T;
+  status?: T;
+  verifiedPurchase?: T;
+  adminNote?: T;
   updatedAt?: T;
   createdAt?: T;
 }

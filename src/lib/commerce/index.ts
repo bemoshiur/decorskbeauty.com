@@ -13,6 +13,16 @@ export {
 export { getSiteSettings, getHomepage, listFeaturedCategories } from './content'
 export { listApprovedTestimonials } from './testimonials'
 export {
+  listApprovedReviews,
+  getReviewSummary,
+  summarize,
+  hasPurchasedProduct,
+  EMPTY_SUMMARY,
+  type ReviewCard,
+  type ReviewSummary,
+  type RatingKey,
+} from './reviews'
+export {
   computeCheckoutTerms,
   DELIVERY_CHARGE,
   FREE_SHIPPING_MIN_SUBTOTAL,

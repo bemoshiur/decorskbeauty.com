@@ -70,3 +70,18 @@ export const revalidateContentAfterDelete: CollectionAfterDeleteHook = async ({ 
   await bustContent()
   return doc
 }
+
+/**
+ * Reviews are catalog data (they change a PDP's rating + review list), so bust CATALOG_TAG — the PDP's
+ * product/variant/review reads all carry it, so approving or removing a review re-renders the page with
+ * the new AggregateRating (#12). Approvals are infrequent, so the broad bust is fine.
+ */
+export const revalidateReviewAfterChange: CollectionAfterChangeHook = async ({ doc }) => {
+  await bust()
+  return doc
+}
+
+export const revalidateReviewAfterDelete: CollectionAfterDeleteHook = async ({ doc }) => {
+  await bust()
+  return doc
+}

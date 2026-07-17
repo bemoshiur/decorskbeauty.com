@@ -67,6 +67,48 @@ describe('Product JSON-LD (§14.2)', () => {
   })
 })
 
+describe('Product JSON-LD rating (#12/#29 — real approved reviews only)', () => {
+  const dist = (over: Partial<Record<1 | 2 | 3 | 4 | 5, number>> = {}) => ({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, ...over })
+  const build = (
+    summary: { count: number; average: number; distribution: ReturnType<typeof dist> },
+    reviews: Parameters<typeof productJsonLd>[0]['reviews'] = [],
+  ) => productJsonLd({ product: product(), variants: [variant('R-1')], reviewSummary: summary, reviews, site: SITE }) as Record<string, unknown>
+
+  it('emits AggregateRating from a real summary', () => {
+    const data = build({ count: 3, average: 4.7, distribution: dist({ 4: 1, 5: 2 }) })
+    const ar = data.aggregateRating as Record<string, unknown>
+    expect(ar['@type']).toBe('AggregateRating')
+    expect(ar.ratingValue).toBe(4.7)
+    expect(ar.reviewCount).toBe(3)
+    expect(ar.bestRating).toBe(5)
+  })
+
+  it('emits Review nodes carrying author, rating and body', () => {
+    const data = build({ count: 1, average: 5, distribution: dist({ 5: 1 }) }, [
+      { id: 1, rating: 5, title: 'Love it', body: 'Cleared my skin', authorName: 'Rima', verifiedPurchase: true, createdAt: '2026-07-15T00:00:00.000Z' },
+    ])
+    const reviews = data.review as Record<string, unknown>[]
+    expect(reviews.length).toBe(1)
+    expect((reviews[0].author as Record<string, unknown>).name).toBe('Rima')
+    expect((reviews[0].reviewRating as Record<string, unknown>).ratingValue).toBe(5)
+    expect(reviews[0].reviewBody).toBe('Cleared my skin')
+  })
+
+  it('emits NO rating when the summary count is 0 — even if a stray reviews array is passed', () => {
+    const data = build({ count: 0, average: 0, distribution: dist() }, [])
+    expect(data.aggregateRating).toBeUndefined()
+    expect(JSON.stringify(data)).not.toContain('aggregateRating')
+  })
+
+  it('caps embedded Review nodes at 10', () => {
+    const many = Array.from({ length: 25 }, (_, i) => ({
+      id: i, rating: 5, title: null, body: `r${i}`, authorName: `A${i}`, verifiedPurchase: false, createdAt: '2026-07-15T00:00:00.000Z',
+    }))
+    const data = build({ count: 25, average: 5, distribution: dist({ 5: 25 }) }, many)
+    expect((data.review as unknown[]).length).toBe(10)
+  })
+})
+
 describe('shippingDetails + returns (§14.2)', () => {
   it('has one entry per zone at the real ৳80/৳110/৳140 rates', () => {
     const s = shippingDetails() as Record<string, unknown>[]
