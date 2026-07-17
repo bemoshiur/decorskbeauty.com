@@ -1,8 +1,13 @@
-const WA_NUMBER = '8801712113032'
-
-/** Floating WhatsApp button on every page (redesign — WhatsApp is how BD buyers order). */
-export function WhatsAppFab({ message = "Hi, I'd like to order from Decor's K-Beauty." }: { message?: string }) {
-  const href = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(message)}`
+/** Floating WhatsApp button on every page (redesign — WhatsApp is how BD buyers order). Phone is
+ *  admin-driven (falls back to the store number). */
+export function WhatsAppFab({
+  phone = '8801712113032',
+  message = "Hi, I'd like to order from Decor's K-Beauty.",
+}: {
+  phone?: string
+  message?: string
+}) {
+  const href = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
   return (
     <a
       href={href}
