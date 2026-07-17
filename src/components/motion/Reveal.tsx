@@ -22,7 +22,7 @@ type RevealProps = {
  * (no transform) when the user prefers reduced motion — content is always present and readable.
  * Requires a <MotionProvider> ancestor (LazyMotion). Client component.
  */
-export function Reveal({ children, className, variants = fadeUp, delay = 0, amount = 0.3, as }: RevealProps) {
+export function Reveal({ children, className, variants = fadeUp, delay = 0, amount = 0.05, as }: RevealProps) {
   const reduce = useReducedMotion()
   const Tag = (as ?? 'div') as ElementType
   const MTag = m[Tag as keyof typeof m] as typeof m.div
@@ -35,7 +35,8 @@ export function Reveal({ children, className, variants = fadeUp, delay = 0, amou
       variants={variants}
       initial="hidden"
       whileInView="show"
-      viewport={{ once: true, amount }}
+      // Fire as soon as a sliver approaches the viewport (reliable even on fast scroll); reveal once.
+      viewport={{ once: true, amount, margin: '0px 0px -80px 0px' }}
       transition={{ delay }}
     >
       {children}
@@ -49,8 +50,8 @@ export function Reveal({ children, className, variants = fadeUp, delay = 0, amou
 export function RevealGroup({
   children,
   className,
-  stagger = 0.09,
-  amount = 0.2,
+  stagger = 0.08,
+  amount = 0.05,
   as,
 }: {
   children: ReactNode
@@ -71,7 +72,7 @@ export function RevealGroup({
       variants={staggerParent(stagger)}
       initial="hidden"
       whileInView="show"
-      viewport={{ once: true, amount }}
+      viewport={{ once: true, amount, margin: '0px 0px -80px 0px' }}
     >
       {children}
     </MTag>
