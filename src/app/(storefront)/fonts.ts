@@ -11,7 +11,7 @@ export { GeistMono } from 'geist/font/mono'
 export const fraunces = Fraunces({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-display',
+  variable: '--font-fraunces',
   // Optical-size + a touch of softness for a warm, high-end editorial feel.
   axes: ['opsz', 'SOFT'],
 })
