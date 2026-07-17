@@ -65,3 +65,7 @@ node_modules/
 
 # local super-admin credentials (never commit)
 ADMIN_CREDENTIALS.txt
+
+# local screenshot artifacts (root only)
+/*.jpeg
+/*.png
