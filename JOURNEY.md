@@ -332,3 +332,37 @@ Owner pivot. Conversion-focused storefront inspired by ghorerbazar.com — front
 **Open:** (1) **No admin user in Neon** — `/admin` shows open first-user form; owner must self-create at /admin to close it. (2) No GitHub auto-build webhook (redeploy via `aws amplify start-job`). (3) Crons (EventBridge+Lambda) deferred — need IAM. (4) Custom domain decorskbeauty.com pending. (5) Security hardening (SSM/compute role).
 **Verified:** typecheck + `next build`(15.4.11) + 115 integration tests green locally; 4 Amplify builds (job 4 = green); live smoke test green.
 **Next:** owner creates admin → verify admin + customer dashboards end-to-end; then webhook/crons/domain/hardening.
+
+## 2026-07-17 · Redesign · Premium animated storefront + admin CMS (LIVE)
+**Shipped:** A full premium redesign — "Webflow-template" look with framer-motion, gradients, and
+an evolved brand design system — plus a Payload-driven CMS so the whole landing page + chrome are
+owner-editable. Homepage deployed live on Amplify; PDP deploying.
+**Design system (Phase 1):** framer-motion + lucide + tailwind-merge; Fraunces (display) + Geist;
+`globals.css @theme` evolved palette (celadon anchor + rationed apricot/rose/lilac/sky/honey accents,
+aurora meshes, gradient/CTA/text utilities, soft shadows); MotionProvider (LazyMotion) + Reveal/
+RevealGroup scroll islands (all reduced-motion safe); UI/shop primitives (Container/Section/Button/
+Badge/GradientMesh/StoreImage[AVIF]/ProductCard/Icon).
+**Admin CMS (Phase 2):** `Homepage` global = blocks layout builder (hero/trust/featured/category/
+promo/bestsellers/testimonials/authenticity/richText/newsletter/cta); `SiteSettings` global
+(announcement/header/nav/footer/identity/SEO/delivery+PDP copy — #3: copy only); `Testimonials`
+collection (marketing only, kept out of AggregateRating #12); merchandising fields on Products
+(isBestSeller/isNew/featuredRank/homeBadge/highlights/crossSell) + Categories (featuredOnHome/
+homeOrder/tileImage/accent); lib/commerce readers through the #13 boundary + CONTENT_TAG revalidate;
+migration `content_models` (baselined the dev-pushed initial migration first, then applied).
+**Homepage (Phase 3):** admin-driven shell (rotating announcement, glass scroll-aware header, footer,
+WhatsApp FAB) + BlockRenderer rendering `getHomepage()` blocks; 10 section components built via a
+parallel subagent fan-out; `scripts/seed-homepage.ts` seeds a rich default. Verified desktop + mobile.
+**PDP (Phase 4):** brand two-column gallery + BuyPanel wrapping the COD-first OrderForm as the primary
+path (live quote/OTP/order — #2/#3/#7 unchanged), variant selector, payment marks (COD/bKash/Nagad),
+trust strip, ingredients/how-to/FAQ, cross-sell, mobile sticky bar, authenticity line (no public batch
+data). Verified desktop + mobile.
+**Phase 5 (partial):** branded favicon (app/icon.svg) + 404/error boundaries. Deferred: OG/Twitter
+images, order-confirmation SMS, responsive `<picture>` on remaining raw `<img>`, loading skeletons.
+**Super-admin:** owner reset + verified (live login "Authentication Passed"); creds in the gitignored
+ADMIN_CREDENTIALS.txt via `scripts/provision-admin.ts`.
+**Non-negotiables:** money path (checkout terms, codAmount, OTP, EPS) reused UNCHANGED; #12 testimonials
+separate from ratings; #13 storefront reads only via lib/commerce; #3 delivery copy never restates
+charges. Design tokens section in CLAUDE.md updated so the evolved system isn't regressed.
+**Verified:** typecheck + build (60/60) + 115 tests green; homepage live (Amplify job 7); PDP deploying
+(job 8). Infra identifiers kept in private memory, not this public repo.
+**Next:** finish PDP deploy verify; then OG images, order SMS, image/skeleton polish.
