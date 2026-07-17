@@ -34,7 +34,10 @@ import { JournalLines } from './collections/JournalLines'
 import { FiscalPeriods } from './collections/FiscalPeriods'
 import { CourierPayouts } from './collections/CourierPayouts'
 import { EpsSettlements } from './collections/EpsSettlements'
+import { Testimonials } from './collections/Testimonials'
 import { Settings } from './globals/Settings'
+import { Homepage } from './globals/Homepage'
+import { SiteSettings } from './globals/SiteSettings'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -84,8 +87,9 @@ export default buildConfig({
     FiscalPeriods,
     CourierPayouts,
     EpsSettlements,
+    Testimonials,
   ],
-  globals: [Settings],
+  globals: [Settings, SiteSettings, Homepage],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

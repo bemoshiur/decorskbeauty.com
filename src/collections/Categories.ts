@@ -24,6 +24,23 @@ export const Categories: CollectionConfig = {
     { name: 'parent', type: 'relationship', relationTo: 'categories' },
     { name: 'image', type: 'upload', relationTo: 'media' },
     { name: 'description', type: 'richText' },
+    // ---- Homepage merchandising (§ redesign 2026-07-17) ----
+    { name: 'featuredOnHome', type: 'checkbox', defaultValue: false, admin: { description: 'Show in the homepage category grid.' } },
+    { name: 'homeOrder', type: 'number', defaultValue: 0, admin: { description: 'Lower shows first in the category grid.' } },
+    { name: 'tileImage', type: 'upload', relationTo: 'media', admin: { description: 'Optional dedicated image for the homepage tile (falls back to `image`).' } },
+    {
+      name: 'accent',
+      type: 'select',
+      defaultValue: 'celadon',
+      options: [
+        { label: 'Celadon', value: 'celadon' },
+        { label: 'Sky', value: 'sky' },
+        { label: 'Apricot', value: 'apricot' },
+        { label: 'Rose', value: 'rose-clay' },
+        { label: 'Lilac', value: 'lilac' },
+      ],
+      admin: { description: 'Tile accent colour.' },
+    },
     seoField,
   ],
 }

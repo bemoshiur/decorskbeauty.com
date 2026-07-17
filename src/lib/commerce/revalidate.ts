@@ -1,6 +1,10 @@
-import type { CollectionAfterChangeHook, CollectionAfterDeleteHook } from 'payload'
+import type {
+  CollectionAfterChangeHook,
+  CollectionAfterDeleteHook,
+  GlobalAfterChangeHook,
+} from 'payload'
 
-import { CATALOG_TAG } from './tags'
+import { CATALOG_TAG, CONTENT_TAG } from './tags'
 
 /**
  * Bust the ISR cache when catalog data changes (§15.3). Lazy-imports next/cache so these
@@ -36,5 +40,33 @@ export const revalidateCatalogAfterChange: CollectionAfterChangeHook = async ({ 
 
 export const revalidateCatalogAfterDelete: CollectionAfterDeleteHook = async ({ doc }) => {
   await bust((doc as { slug?: unknown })?.slug)
+  return doc
+}
+
+/** Bust the marketing-content cache (homepage/site-settings/testimonials edits). Never throws. */
+const bustContent = async () => {
+  try {
+    const { revalidateTag } = await import('next/cache')
+    revalidateTag(CONTENT_TAG)
+  } catch {
+    /* outside a request context (CLI/seed) — nothing to revalidate */
+  }
+}
+
+/** afterChange for the Homepage / SiteSettings globals. */
+export const revalidateContentGlobal: GlobalAfterChangeHook = async ({ doc }) => {
+  await bustContent()
+  return doc
+}
+
+/** afterChange for content collections (Testimonials). */
+export const revalidateContentAfterChange: CollectionAfterChangeHook = async ({ doc }) => {
+  await bustContent()
+  return doc
+}
+
+/** afterDelete for content collections (Testimonials). */
+export const revalidateContentAfterDelete: CollectionAfterDeleteHook = async ({ doc }) => {
+  await bustContent()
   return doc
 }

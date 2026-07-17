@@ -4,9 +4,14 @@ export {
   getProductBySlug,
   getActiveVariants,
   getPublishedProductSlugs,
+  listFeaturedProducts,
+  listBestSellers,
+  listProductCardsByIds,
   effectivePrice,
   type ProductCard,
 } from './products'
+export { getSiteSettings, getHomepage, listFeaturedCategories } from './content'
+export { listApprovedTestimonials } from './testimonials'
 export {
   computeCheckoutTerms,
   DELIVERY_CHARGE,
@@ -18,7 +23,7 @@ export {
 } from './checkout'
 export { listIngredients, getIngredientBySlug, getIngredientSlugs } from './ingredients'
 export { getRelatedProducts } from './related'
-export { CATALOG_TAG, productTag, categoryTag, brandTag } from './tags'
+export { CATALOG_TAG, CONTENT_TAG, productTag, categoryTag, brandTag } from './tags'
 export {
   getFefoLotForVariant,
   verifyBatch,

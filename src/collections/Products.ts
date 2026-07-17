@@ -111,6 +111,45 @@ export const Products: CollectionConfig = {
         { name: 'answer', type: 'textarea', required: true },
       ],
     },
+    // ---- Merchandising (§ redesign 2026-07-17): admin control over homepage/PDP surfacing ----
+    {
+      type: 'collapsible',
+      label: 'Merchandising',
+      admin: { initCollapsed: true, description: 'Controls how this product is featured on the storefront.' },
+      fields: [
+        { name: 'isBestSeller', type: 'checkbox', defaultValue: false, admin: { description: 'Show in the best-sellers section.' } },
+        { name: 'isNew', type: 'checkbox', defaultValue: false, admin: { description: 'Adds a "New" badge.' } },
+        { name: 'featuredRank', type: 'number', admin: { description: 'Lower ranks first in featured/best-seller auto-fill. Leave blank to exclude from auto-fill.' } },
+        {
+          name: 'homeBadge',
+          type: 'select',
+          options: [
+            { label: '— none —', value: 'none' },
+            { label: 'Best seller', value: 'bestseller' },
+            { label: 'New', value: 'new' },
+            { label: 'Sale', value: 'sale' },
+            { label: 'Limited', value: 'limited' },
+          ],
+          defaultValue: 'none',
+          admin: { description: 'Badge shown on product cards.' },
+        },
+        {
+          name: 'highlights',
+          type: 'array',
+          maxRows: 5,
+          labels: { singular: 'Highlight', plural: 'Highlights' },
+          admin: { description: 'Short USP bullets shown on the PDP.' },
+          fields: [{ name: 'text', type: 'text', required: true }],
+        },
+        {
+          name: 'crossSell',
+          type: 'relationship',
+          relationTo: 'products',
+          hasMany: true,
+          admin: { description: 'Curated "you may also like" products (falls back to auto-related when empty).' },
+        },
+      ],
+    },
     seoField,
   ],
 }
