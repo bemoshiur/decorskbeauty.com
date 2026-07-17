@@ -15,6 +15,10 @@ const bad = (error: string, status = 400) => NextResponse.json({ ok: false, erro
  * Public review submission. Always forces status=pending (owner moderates in admin before anything shows —
  * #12: real, approved reviews only). Sets verifiedPurchase when the phone matches a delivered/paid order
  * for this product. Never trusts a client-supplied product id — resolves the product from its slug.
+ *
+ * Path note: this lives at /api/reviews/SUBMIT, not /api/reviews, on purpose. The `reviews` collection's
+ * Payload REST endpoint is /api/reviews; an exact Next route there would shadow Payload's catch-all and
+ * break the admin's list/moderation. /api/reviews/submit only shadows the (never-real) id "submit".
  */
 export async function POST(req: NextRequest) {
   const b = (await req.json().catch(() => ({}))) as {

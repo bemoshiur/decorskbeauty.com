@@ -32,7 +32,7 @@ export function ReviewForm({ slug }: { slug: string }) {
     setState('sending')
     setMsg('')
     try {
-      const res = await fetch('/api/reviews', {
+      const res = await fetch('/api/reviews/submit', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ slug, rating, title, body, authorName: name, phone }),
