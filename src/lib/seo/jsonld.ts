@@ -27,7 +27,7 @@ export function organization(site = siteUrl()): object {
     '@id': ORG_ID(site),
     name: BUSINESS.name,
     url: `${site}/`,
-    logo: absUrl('/icon.png', site),
+    logo: absUrl('/og.png', site),
     telephone: BUSINESS.phone,
     address: {
       '@type': 'PostalAddress',
@@ -59,7 +59,7 @@ export function localBusiness(site = siteUrl()): object {
     '@type': 'HealthAndBeautyBusiness',
     '@id': `${site}/#localbusiness`,
     name: BUSINESS.name,
-    image: absUrl('/icon.png', site),
+    image: absUrl('/og.png', site),
     url: `${site}/`,
     telephone: BUSINESS.phone,
     priceRange: '৳৳',

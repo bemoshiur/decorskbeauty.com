@@ -6,6 +6,7 @@ import { computeCheckoutTerms, type Zone } from './checkout'
 import { effectivePrice } from './products'
 import { cancelStaleOrders } from './stock'
 import { enqueuePurchase } from './tracking'
+import { sendOrderConfirmationSms } from './notifications'
 
 export type PlaceOrderInput = {
   lines: { variantId: number; qty: number }[]
@@ -191,6 +192,8 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
   if (isCod) {
     // COD confirms at placement (after OTP) → Purchase fires here (#9, §13.4).
     await enqueuePurchase(payload, order.id)
+    // Post-purchase confirmation SMS (BD trust signal). Best-effort — never blocks the order.
+    await sendOrderConfirmationSms(order)
     return { order, payment: { required: false, amount: 0, purpose: 'full' } }
   }
   const purpose: 'advance' | 'full' = paymentMethod === 'epsAdvance' ? 'advance' : 'full'

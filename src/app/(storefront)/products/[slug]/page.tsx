@@ -32,10 +32,32 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params
   const p = await getProductBySlug(slug)
   if (!p) return {}
+  const description = p.seo?.metaDescription ?? p.shortDescription ?? undefined
+  const img = p.images?.[0]?.image
+  const ogImage =
+    img && typeof img === 'object'
+      ? ((img.sizes as Record<string, { url?: string | null } | undefined> | undefined)?.hero?.url ??
+        (img.sizes as Record<string, { url?: string | null } | undefined> | undefined)?.card?.url ??
+        img.url ??
+        undefined)
+      : undefined
   return {
     title: p.seo?.metaTitle ?? p.title,
-    description: p.seo?.metaDescription ?? p.shortDescription ?? undefined,
+    description,
     alternates: { canonical: `/products/${slug}` },
+    openGraph: {
+      type: 'website',
+      title: p.title,
+      description,
+      url: `/products/${slug}`,
+      ...(ogImage ? { images: [{ url: ogImage, alt: p.title }] } : {}),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: p.title,
+      description,
+      ...(ogImage ? { images: [ogImage] } : {}),
+    },
   }
 }
 

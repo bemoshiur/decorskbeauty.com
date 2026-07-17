@@ -5,6 +5,7 @@ import { verifyPayment, normalizeStatus } from '@/lib/integrations/eps/client'
 import { postJournal, postAdvanceReceived } from '@/lib/accounting'
 import { releaseOrderReservations } from './stock'
 import { enqueuePurchase } from './tracking'
+import { sendOrderConfirmationSms } from './notifications'
 
 const relId = (rel: unknown): number | null =>
   rel == null ? null : typeof rel === 'object' ? ((rel as { id?: number }).id ?? null) : (rel as number)
@@ -87,6 +88,8 @@ export async function handleEpsCallback(req: NextRequest) {
           timeline: [...(order.timeline ?? []), { at: new Date().toISOString(), actor: 'eps', event: 'paymentVerified', note: `${txn.purpose} ৳${txn.amount}` }],
         },
       })
+      // Post-payment confirmation SMS (once, on the first successful transition). Best-effort.
+      await sendOrderConfirmationSms(order)
     }
     // Purchase fires at confirmation (#9, §13.4).
     if (orderId) await enqueuePurchase(payload, orderId)

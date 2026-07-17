@@ -22,6 +22,24 @@ export const metadata: Metadata = {
   },
   description:
     'Authentic Korean skincare and haircare in Banani, Dhaka. Every unit ships from a tracked import lot with a verifiable batch code.',
+  // Social share previews (Facebook/Messenger/WhatsApp — the dominant BD channels). Image URLs
+  // resolve against metadataBase, so rich previews light up once decorskbeauty.com points at the app.
+  openGraph: {
+    type: 'website',
+    siteName: "Decor's K-Beauty",
+    locale: 'en_US',
+    url: '/',
+    title: "Decor's K-Beauty — 100% Authentic Korean Skincare & Haircare",
+    description:
+      '100% authentic Korean skincare & haircare, delivered across Bangladesh with Cash on Delivery. Every unit has a verifiable batch code.',
+    images: [{ url: '/og.png', width: 1200, height: 630, alt: "Decor's K-Beauty" }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "Decor's K-Beauty — 100% Authentic Korean Skincare & Haircare",
+    description: '100% authentic Korean skincare & haircare, delivered across Bangladesh with Cash on Delivery.',
+    images: ['/og.png'],
+  },
 }
 
 export default async function StorefrontLayout({ children }: { children: React.ReactNode }) {
