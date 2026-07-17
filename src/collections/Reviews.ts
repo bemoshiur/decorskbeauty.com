@@ -25,7 +25,11 @@ export const Reviews: CollectionConfig = {
       'Real customer reviews. Only Approved reviews appear on the storefront and count toward the star rating (#12). Do not create fake reviews.',
   },
   access: {
-    read: () => true, // storefront reader filters to approved + shapes a phone-free DTO; admin sees all
+    // Anonymous callers (incl. Payload's auto-generated REST/GraphQL) may only ever see APPROVED rows —
+    // a Where clause, not `true` — so pending/rejected reviews (and their author names) are never exposed
+    // before moderation (#12). Admins see all. The storefront helpers pass overrideAccess:true and already
+    // filter to approved, so they are unaffected.
+    read: ({ req }) => (req.user ? true : { status: { equals: 'approved' } }),
     create: () => true, // public customer submission — the API forces status=pending and rate-limits
     update: adminOnly,
     delete: adminOnly,
