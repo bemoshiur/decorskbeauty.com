@@ -1,76 +1,201 @@
 @import 'tailwindcss';
 
 /*
-  Decor's K-Beauty design tokens — BUILD_PROMPT §16.2.
-  Do NOT introduce a colour outside this set. No pastel pink (category default).
-  Bengali faces intentionally dropped — English-only build (see JOURNEY 2026-07-15).
+  Decor's K-Beauty — premium design system (evolved 2026-07-17).
+  Brand-anchored on Goryeo celadon greens, expanded with rationed warm/cool accents for
+  gradients + highlights. NOT the category-default fake-seller pastel pink. The storefront
+  commits to a single polished LIGHT theme (deliberate brand look). English-only build.
+  See docs/superpowers/plans/2026-07-17-premium-redesign.md.
 */
 @theme {
-  /* Colour — six values, no others */
-  --color-paper: #f2f4f1; /* cool pharmacy-shelf paper */
-  --color-ink: #14181a; /* cool near-black, all body text */
-  --color-celadon: #7fa893; /* Goryeo celadon, primary accent */
-  --color-celadon-deep: #2f5d4a; /* headers, seals, active states */
-  --color-seal: #c0362c; /* stamp red — RATIONED: authenticity seal + expiry warnings only */
-  --color-grey: #636863; /* meta, dividers, disabled — darkened from #8e958f to meet WCAG AA on paper */
+  /* ---- Neutrals / surfaces ---- */
+  --color-paper: #f2f4f1; /* app background */
+  --color-cloud: #fbfcfb; /* raised cards / nav */
+  --color-mist: #e9eee9; /* subtle fills, dividers */
+  --color-ink: #14181a; /* body text */
+  --color-ink-soft: #37413d; /* secondary text */
+  --color-grey: #636863; /* meta, disabled (AA on paper) */
+  --color-line: #dde4de; /* hairline borders */
 
-  /* Type — Latin display/UI (Anek Latin) + evidential (Martian Mono) */
+  /* ---- Brand greens ---- */
+  --color-celadon: #7fa893; /* primary accent */
+  --color-celadon-soft: #a9c6b6;
+  --color-celadon-deep: #2f5d4a; /* CTAs, headers, active */
+  --color-celadon-ink: #1e3d30; /* deepest, text on light */
+
+  /* ---- Rationed accents (gradients + badges only) ---- */
+  --color-apricot: #f5c9a6;
+  --color-rose-clay: #e39b8c;
+  --color-lilac: #cfc9f0;
+  --color-sky: #a9d8e4;
+  --color-honey: #e9b949;
+
+  /* ---- Rationed alert ---- */
+  --color-seal: #c0362c; /* authenticity seal + expiry ONLY */
+
+  /* ---- Type ---- */
+  --font-display: var(--font-fraunces), ui-serif, 'Iowan Old Style', Georgia, serif;
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, 'SFMono-Regular', monospace;
 
-  /* Strict 4pt grid (§16.2) */
-  --spacing: 0.25rem;
+  /* ---- Spacing / radius ---- */
+  --spacing: 0.25rem; /* 4pt grid */
+  --radius-control: 0.625rem; /* 10px controls */
+  --radius-card: 1.25rem; /* 20px cards */
+  --radius-feature: 1.75rem; /* 28px feature panels (renamed to avoid clobbering built-in rounded-xl) */
+  --radius-pill: 999px;
 
-  /* Radius: 0 on evidential elements (slip, badges, tables); 4px on interactive controls */
-  --radius-control: 4px;
+  /* ---- Shadows (soft, premium) ---- */
+  --shadow-soft: 0 1px 2px rgba(20, 24, 26, 0.04), 0 8px 24px -14px rgba(20, 24, 26, 0.16);
+  --shadow-lift: 0 2px 8px rgba(20, 24, 26, 0.05), 0 28px 56px -26px rgba(47, 93, 74, 0.28);
+  --shadow-glow: 0 0 0 1px rgba(127, 168, 147, 0.28), 0 24px 64px -28px rgba(47, 93, 74, 0.45);
+
+  /* ---- Motion ---- */
+  --ease-out-soft: cubic-bezier(0.22, 0.8, 0.28, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.5, 1);
 }
 
-/* Neutral, high-contrast base with system dark mode (Vercel Commerce look). */
+/* ---------- Base ---------- */
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
+}
+
+* {
+  border-color: var(--color-line);
 }
 
 html {
-  background-color: #ffffff;
-  color: #111827; /* neutral-900 */
+  background-color: var(--color-paper);
+  color: var(--color-ink);
   -webkit-tap-highlight-color: transparent;
-}
-
-@media (prefers-color-scheme: dark) {
-  html {
-    background-color: #000000;
-    color: #ffffff;
-  }
+  scroll-behavior: smooth;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
 body {
   font-family: var(--font-sans);
-  min-height: 100dvh; /* dvh not vh — iOS Safari toolbar collapse */
+  min-height: 100dvh; /* dvh, not vh — iOS Safari toolbar collapse */
+  background-color: var(--color-paper);
+  color: var(--color-ink);
 }
 
-/* Auto-scrolling product carousel (home). */
+::selection {
+  background: var(--color-celadon-deep);
+  color: #fff;
+}
+
+/* Visible keyboard focus everywhere (quality floor). */
+:focus-visible {
+  outline: 2px solid var(--color-celadon-deep);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* Display headings default to the editorial serif. */
+.font-display {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  letter-spacing: -0.01em;
+}
+
+/* ---------- Premium utilities ---------- */
+
+/* Aurora gradient mesh — soft, blurred, brand-anchored. Use as a decorative bg layer. */
+.mesh-hero {
+  background:
+    radial-gradient(42rem 32rem at 12% -8%, color-mix(in oklab, var(--color-celadon) 55%, transparent), transparent 60%),
+    radial-gradient(38rem 30rem at 92% 4%, color-mix(in oklab, var(--color-sky) 50%, transparent), transparent 62%),
+    radial-gradient(36rem 30rem at 70% 96%, color-mix(in oklab, var(--color-apricot) 55%, transparent), transparent 60%),
+    var(--color-paper);
+}
+.mesh-mint {
+  background:
+    radial-gradient(34rem 26rem at 20% 10%, color-mix(in oklab, var(--color-celadon-soft) 60%, transparent), transparent 60%),
+    radial-gradient(30rem 26rem at 88% 90%, color-mix(in oklab, var(--color-sky) 45%, transparent), transparent 62%),
+    var(--color-cloud);
+}
+.mesh-bloom {
+  background:
+    radial-gradient(32rem 26rem at 80% 6%, color-mix(in oklab, var(--color-apricot) 60%, transparent), transparent 60%),
+    radial-gradient(30rem 26rem at 12% 92%, color-mix(in oklab, var(--color-rose-clay) 45%, transparent), transparent 62%),
+    var(--color-cloud);
+}
+
+/* Deep CTA gradient (buttons, banners). */
+.grad-cta {
+  background-image: linear-gradient(135deg, var(--color-celadon-deep), var(--color-celadon));
+}
+
+/* Gradient text for accent words in headlines. */
+.text-gradient {
+  background-image: linear-gradient(120deg, var(--color-celadon-deep), var(--color-celadon) 55%, var(--color-sky));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Frosted glass (sticky nav, floating cards). */
+.glass {
+  background: color-mix(in oklab, var(--color-cloud) 72%, transparent);
+  -webkit-backdrop-filter: saturate(1.4) blur(14px);
+  backdrop-filter: saturate(1.4) blur(14px);
+}
+
+/* Grain-free soft ring used on premium cards. */
+.ring-soft {
+  box-shadow: var(--shadow-soft);
+}
+
+/* ---------- Keyframes ---------- */
+
+/* Auto-scrolling marquee (best-sellers strip). */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee { animation: marquee 45s linear infinite; }
+
+/* Legacy carousel name kept for the existing home-sections until it is replaced. */
 @keyframes carousel {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
 .animate-carousel { animation: carousel 40s linear infinite; }
 
-/* §16.3: one orchestrated moment — the authenticity seal stamps in once on PDP load. */
+/* Slow drift for hero gradient blobs. */
+@keyframes drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(2%, -3%, 0) scale(1.06); }
+}
+.animate-drift { animation: drift 18s var(--ease-out-soft) infinite; }
+
+/* Skeleton shimmer. */
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+
+/* Authenticity seal stamp (PDP signature moment). */
 @keyframes seal-stamp {
-  0% {
-    transform: scale(1.25) rotate(-6deg);
-    opacity: 0;
-  }
-  100% {
-    transform: scale(1) rotate(0deg);
-    opacity: 1;
-  }
+  0% { transform: scale(1.25) rotate(-6deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
-.slip-seal {
-  animation: seal-stamp 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-}
+.slip-seal { animation: seal-stamp 180ms var(--ease-out-soft) both; }
+
+/* ---------- Reduced motion: honor the OS setting everywhere ---------- */
 @media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .animate-marquee,
+  .animate-carousel,
+  .animate-drift,
   .slip-seal {
-    animation: none;
+    animation: none !important;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
   }
 }

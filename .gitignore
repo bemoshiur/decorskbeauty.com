@@ -58,3 +58,7 @@ node_modules/
 /.env
 # Lighthouse CI output
 /.lighthouseci/
+
+# local visual-check artifacts
+/homepage-*.jpeg
+.playwright-mcp/

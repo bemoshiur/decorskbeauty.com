@@ -91,6 +91,7 @@ export interface Config {
     fiscalPeriods: FiscalPeriod;
     courierPayouts: CourierPayout;
     epsSettlements: EpsSettlement;
+    testimonials: Testimonial;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -122,6 +123,7 @@ export interface Config {
     fiscalPeriods: FiscalPeriodsSelect<false> | FiscalPeriodsSelect<true>;
     courierPayouts: CourierPayoutsSelect<false> | CourierPayoutsSelect<true>;
     epsSettlements: EpsSettlementsSelect<false> | EpsSettlementsSelect<true>;
+    testimonials: TestimonialsSelect<false> | TestimonialsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -133,9 +135,13 @@ export interface Config {
   fallbackLocale: null;
   globals: {
     settings: Setting;
+    'site-settings': SiteSetting;
+    homepage: Homepage;
   };
   globalsSelect: {
     settings: SettingsSelect<false> | SettingsSelect<true>;
+    'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
+    homepage: HomepageSelect<false> | HomepageSelect<true>;
   };
   locale: null;
   widgets: {
@@ -332,6 +338,22 @@ export interface Category {
     [k: string]: unknown;
   } | null;
   /**
+   * Show in the homepage category grid.
+   */
+  featuredOnHome?: boolean | null;
+  /**
+   * Lower shows first in the category grid.
+   */
+  homeOrder?: number | null;
+  /**
+   * Optional dedicated image for the homepage tile (falls back to `image`).
+   */
+  tileImage?: (number | null) | Media;
+  /**
+   * Tile accent colour.
+   */
+  accent?: ('celadon' | 'sky' | 'apricot' | 'rose-clay' | 'lilac') | null;
+  /**
    * Search/social metadata. Falls back to title + short description if blank.
    */
   seo?: {
@@ -475,6 +497,35 @@ export interface Product {
         id?: string | null;
       }[]
     | null;
+  /**
+   * Show in the best-sellers section.
+   */
+  isBestSeller?: boolean | null;
+  /**
+   * Adds a "New" badge.
+   */
+  isNew?: boolean | null;
+  /**
+   * Lower ranks first in featured/best-seller auto-fill. Leave blank to exclude from auto-fill.
+   */
+  featuredRank?: number | null;
+  /**
+   * Badge shown on product cards.
+   */
+  homeBadge?: ('none' | 'bestseller' | 'new' | 'sale' | 'limited') | null;
+  /**
+   * Short USP bullets shown on the PDP.
+   */
+  highlights?:
+    | {
+        text: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Curated "you may also like" products (falls back to auto-related when empty).
+   */
+  crossSell?: (number | Product)[] | null;
   /**
    * Search/social metadata. Falls back to title + short description if blank.
    */
@@ -1057,6 +1108,44 @@ export interface EpsSettlement {
   createdAt: string;
 }
 /**
+ * Social-proof quotes for the storefront. Marketing only — not used for star-rating structured data.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "testimonials".
+ */
+export interface Testimonial {
+  id: number;
+  name: string;
+  /**
+   * e.g. Banani, Dhaka
+   */
+  location?: string | null;
+  avatar?: (number | null) | Media;
+  /**
+   * Display only — never emitted as AggregateRating (#12).
+   */
+  rating?: number | null;
+  quote: string;
+  /**
+   * Optional: the product this is about.
+   */
+  product?: (number | null) | Product;
+  /**
+   * Only approved testimonials appear on the storefront.
+   */
+  approved?: boolean | null;
+  /**
+   * Show in the homepage testimonials section.
+   */
+  featured?: boolean | null;
+  /**
+   * Lower shows first.
+   */
+  order?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -1175,6 +1264,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'epsSettlements';
         value: number | EpsSettlement;
+      } | null)
+    | ({
+        relationTo: 'testimonials';
+        value: number | Testimonial;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -1354,6 +1447,10 @@ export interface CategoriesSelect<T extends boolean = true> {
   parent?: T;
   image?: T;
   description?: T;
+  featuredOnHome?: T;
+  homeOrder?: T;
+  tileImage?: T;
+  accent?: T;
   seo?:
     | T
     | {
@@ -1417,6 +1514,17 @@ export interface ProductsSelect<T extends boolean = true> {
         answer?: T;
         id?: T;
       };
+  isBestSeller?: T;
+  isNew?: T;
+  featuredRank?: T;
+  homeBadge?: T;
+  highlights?:
+    | T
+    | {
+        text?: T;
+        id?: T;
+      };
+  crossSell?: T;
   seo?:
     | T
     | {
@@ -1869,6 +1977,23 @@ export interface EpsSettlementsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "testimonials_select".
+ */
+export interface TestimonialsSelect<T extends boolean = true> {
+  name?: T;
+  location?: T;
+  avatar?: T;
+  rating?: T;
+  quote?: T;
+  product?: T;
+  approved?: T;
+  featured?: T;
+  order?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv_select".
  */
 export interface PayloadKvSelect<T extends boolean = true> {
@@ -1954,6 +2079,458 @@ export interface Setting {
   createdAt?: string | null;
 }
 /**
+ * Header, footer, announcement bar, identity, and marketing copy.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings".
+ */
+export interface SiteSetting {
+  id: number;
+  announcementBar?: {
+    enabled?: boolean | null;
+    /**
+     * Rotates through these (e.g. free-shipping threshold, hotline, offer).
+     */
+    messages?:
+      | {
+          text: string;
+          linkLabel?: string | null;
+          linkHref?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    background?: ('celadon-deep' | 'ink' | 'grad') | null;
+  };
+  header?: {
+    /**
+     * Optional logo image (falls back to the wordmark).
+     */
+    logo?: (number | null) | Media;
+    wordmark?: string | null;
+    tagline?: string | null;
+    primaryNav?:
+      | {
+          label: string;
+          href: string;
+          id?: string | null;
+        }[]
+      | null;
+    searchPlaceholder?: string | null;
+  };
+  footer?: {
+    /**
+     * Short brand line under the wordmark.
+     */
+    blurb?: string | null;
+    columns?:
+      | {
+          heading: string;
+          links?:
+            | {
+                label: string;
+                href: string;
+                id?: string | null;
+              }[]
+            | null;
+          id?: string | null;
+        }[]
+      | null;
+    socials?:
+      | {
+          platform?: ('facebook' | 'instagram' | 'whatsapp' | 'youtube' | 'tiktok') | null;
+          url: string;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Payment marks shown in the footer + checkout.
+     */
+    paymentMethods?: ('cod' | 'bkash' | 'nagad' | 'rocket' | 'upay' | 'visa' | 'mastercard')[] | null;
+    /**
+     * Leave blank to auto-generate "© YEAR <wordmark>".
+     */
+    copyright?: string | null;
+  };
+  /**
+   * Single source of truth for name/phone/address (feeds header, footer, JSON-LD, llms.txt).
+   */
+  businessIdentity?: {
+    siteName?: string | null;
+    phone?: string | null;
+    /**
+     * Digits only, country code first (wa.me format).
+     */
+    whatsappNumber?: string | null;
+    email?: string | null;
+    streetAddress?: string | null;
+    locality?: string | null;
+    /**
+     * One-paragraph description for llms.txt / meta fallback.
+     */
+    aboutBlurb?: string | null;
+  };
+  defaultSeo?: {
+    metaTitle?: string | null;
+    metaDescription?: string | null;
+    ogImage?: (number | null) | Media;
+  };
+  /**
+   * DISPLAY COPY ONLY. Never the numeric charges (#3) — those come from checkout terms.
+   */
+  deliveryPromise?: {
+    freeShipHeadline?: string | null;
+    zoneBlurb?: string | null;
+    etaCopy?: string | null;
+  };
+  productPage?: {
+    stockPromise?: string | null;
+    preorderPromise?: string | null;
+    authenticityCopy?: string | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * Add, remove and reorder the landing-page sections.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "homepage".
+ */
+export interface Homepage {
+  id: number;
+  /**
+   * The homepage renders these top-to-bottom.
+   */
+  layout?:
+    | (
+        | HeroBlock
+        | TrustBadgesBlock
+        | FeaturedProductsBlock
+        | CategoryGridBlock
+        | PromoBannerBlock
+        | BestSellersBlock
+        | TestimonialsBlock
+        | AuthenticityBlock
+        | RichTextBlock
+        | NewsletterBlock
+        | CtaBlock
+      )[]
+    | null;
+  /**
+   * Search/social metadata. Falls back to title + short description if blank.
+   */
+  seo?: {
+    metaTitle?: string | null;
+    metaDescription?: string | null;
+    ogImage?: (number | null) | Media;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HeroBlock".
+ */
+export interface HeroBlock {
+  /**
+   * Small label above the headline.
+   */
+  eyebrow?: string | null;
+  headline: string;
+  /**
+   * Word(s) to render in the gradient accent.
+   */
+  headlineAccent?: string | null;
+  subheadline?: string | null;
+  primaryCta?: {
+    label?: string | null;
+    /**
+     * e.g. /search, /products/slug, https://wa.me/...
+     */
+    href?: string | null;
+  };
+  secondaryCta?: {
+    label?: string | null;
+    /**
+     * e.g. /search, /products/slug, https://wa.me/...
+     */
+    href?: string | null;
+  };
+  /**
+   * Hero visual (product / lifestyle).
+   */
+  image?: (number | null) | Media;
+  floatingBadges?:
+    | {
+        text?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  align?: ('left' | 'center') | null;
+  /**
+   * Background treatment for this section.
+   */
+  theme?: ('paper' | 'cloud' | 'mist' | 'mesh-hero' | 'mesh-mint' | 'mesh-bloom' | 'ink') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'hero';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TrustBadgesBlock".
+ */
+export interface TrustBadgesBlock {
+  heading?: string | null;
+  badges?:
+    | {
+        icon?:
+          | (
+              | 'shield-check'
+              | 'badge-check'
+              | 'truck'
+              | 'rotate-ccw'
+              | 'headphones'
+              | 'sparkles'
+              | 'leaf'
+              | 'lock'
+              | 'star'
+              | 'heart'
+              | 'package-check'
+              | 'phone'
+            )
+          | null;
+        label: string;
+        sub?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Background treatment for this section.
+   */
+  theme?: ('paper' | 'cloud' | 'mist' | 'mesh-hero' | 'mesh-mint' | 'mesh-bloom' | 'ink') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'trustBadges';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FeaturedProductsBlock".
+ */
+export interface FeaturedProductsBlock {
+  heading?: string | null;
+  subheading?: string | null;
+  /**
+   * Curated + ordered. Leave empty to auto-fill from featured/best-seller flags.
+   */
+  products?: (number | Product)[] | null;
+  viewAll?: {
+    label?: string | null;
+    /**
+     * e.g. /search, /products/slug, https://wa.me/...
+     */
+    href?: string | null;
+  };
+  /**
+   * Background treatment for this section.
+   */
+  theme?: ('paper' | 'cloud' | 'mist' | 'mesh-hero' | 'mesh-mint' | 'mesh-bloom' | 'ink') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'featuredProducts';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CategoryGridBlock".
+ */
+export interface CategoryGridBlock {
+  heading?: string | null;
+  subheading?: string | null;
+  /**
+   * Leave empty to auto-fill from categories flagged "featured on home".
+   */
+  categories?: (number | Category)[] | null;
+  layout?: ('bento' | 'grid') | null;
+  /**
+   * Background treatment for this section.
+   */
+  theme?: ('paper' | 'cloud' | 'mist' | 'mesh-hero' | 'mesh-mint' | 'mesh-bloom' | 'ink') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'categoryGrid';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PromoBannerBlock".
+ */
+export interface PromoBannerBlock {
+  eyebrow?: string | null;
+  heading: string;
+  body?: string | null;
+  image?: (number | null) | Media;
+  cta?: {
+    label?: string | null;
+    /**
+     * e.g. /search, /products/slug, https://wa.me/...
+     */
+    href?: string | null;
+  };
+  layout?: ('left' | 'right' | 'full') | null;
+  /**
+   * Background treatment for this section.
+   */
+  theme?: ('paper' | 'cloud' | 'mist' | 'mesh-hero' | 'mesh-mint' | 'mesh-bloom' | 'ink') | null;
+  /**
+   * Optional: show from this time.
+   */
+  startAt?: string | null;
+  /**
+   * Optional: hide after this time.
+   */
+  endAt?: string | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'promoBanner';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "BestSellersBlock".
+ */
+export interface BestSellersBlock {
+  heading?: string | null;
+  subheading?: string | null;
+  /**
+   * Leave empty to auto-fill from the "best seller" flag.
+   */
+  products?: (number | Product)[] | null;
+  /**
+   * Background treatment for this section.
+   */
+  theme?: ('paper' | 'cloud' | 'mist' | 'mesh-hero' | 'mesh-mint' | 'mesh-bloom' | 'ink') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'bestSellers';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TestimonialsBlock".
+ */
+export interface TestimonialsBlock {
+  heading?: string | null;
+  subheading?: string | null;
+  /**
+   * Background treatment for this section.
+   */
+  theme?: ('paper' | 'cloud' | 'mist' | 'mesh-hero' | 'mesh-mint' | 'mesh-bloom' | 'ink') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'testimonials';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "AuthenticityBlock".
+ */
+export interface AuthenticityBlock {
+  eyebrow?: string | null;
+  heading?: string | null;
+  body?: string | null;
+  points?:
+    | {
+        text: string;
+        id?: string | null;
+      }[]
+    | null;
+  image?: (number | null) | Media;
+  verifyCta?: {
+    label?: string | null;
+    /**
+     * e.g. /search, /products/slug, https://wa.me/...
+     */
+    href?: string | null;
+  };
+  /**
+   * Background treatment for this section.
+   */
+  theme?: ('paper' | 'cloud' | 'mist' | 'mesh-hero' | 'mesh-mint' | 'mesh-bloom' | 'ink') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'authenticity';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "RichTextBlock".
+ */
+export interface RichTextBlock {
+  content?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  align?: ('left' | 'center') | null;
+  /**
+   * Background treatment for this section.
+   */
+  theme?: ('paper' | 'cloud' | 'mist' | 'mesh-hero' | 'mesh-mint' | 'mesh-bloom' | 'ink') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'richText';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "NewsletterBlock".
+ */
+export interface NewsletterBlock {
+  heading?: string | null;
+  subheading?: string | null;
+  placeholder?: string | null;
+  ctaLabel?: string | null;
+  /**
+   * Background treatment for this section.
+   */
+  theme?: ('paper' | 'cloud' | 'mist' | 'mesh-hero' | 'mesh-mint' | 'mesh-bloom' | 'ink') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'newsletter';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CtaBlock".
+ */
+export interface CtaBlock {
+  heading: string;
+  subheading?: string | null;
+  primaryCta?: {
+    label?: string | null;
+    /**
+     * e.g. /search, /products/slug, https://wa.me/...
+     */
+    href?: string | null;
+  };
+  secondaryCta?: {
+    label?: string | null;
+    /**
+     * e.g. /search, /products/slug, https://wa.me/...
+     */
+    href?: string | null;
+  };
+  /**
+   * Background treatment for this section.
+   */
+  theme?: ('paper' | 'cloud' | 'mist' | 'mesh-hero' | 'mesh-mint' | 'mesh-bloom' | 'ink') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'cta';
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "settings_select".
  */
@@ -1978,6 +2555,333 @@ export interface SettingsSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings_select".
+ */
+export interface SiteSettingsSelect<T extends boolean = true> {
+  announcementBar?:
+    | T
+    | {
+        enabled?: T;
+        messages?:
+          | T
+          | {
+              text?: T;
+              linkLabel?: T;
+              linkHref?: T;
+              id?: T;
+            };
+        background?: T;
+      };
+  header?:
+    | T
+    | {
+        logo?: T;
+        wordmark?: T;
+        tagline?: T;
+        primaryNav?:
+          | T
+          | {
+              label?: T;
+              href?: T;
+              id?: T;
+            };
+        searchPlaceholder?: T;
+      };
+  footer?:
+    | T
+    | {
+        blurb?: T;
+        columns?:
+          | T
+          | {
+              heading?: T;
+              links?:
+                | T
+                | {
+                    label?: T;
+                    href?: T;
+                    id?: T;
+                  };
+              id?: T;
+            };
+        socials?:
+          | T
+          | {
+              platform?: T;
+              url?: T;
+              id?: T;
+            };
+        paymentMethods?: T;
+        copyright?: T;
+      };
+  businessIdentity?:
+    | T
+    | {
+        siteName?: T;
+        phone?: T;
+        whatsappNumber?: T;
+        email?: T;
+        streetAddress?: T;
+        locality?: T;
+        aboutBlurb?: T;
+      };
+  defaultSeo?:
+    | T
+    | {
+        metaTitle?: T;
+        metaDescription?: T;
+        ogImage?: T;
+      };
+  deliveryPromise?:
+    | T
+    | {
+        freeShipHeadline?: T;
+        zoneBlurb?: T;
+        etaCopy?: T;
+      };
+  productPage?:
+    | T
+    | {
+        stockPromise?: T;
+        preorderPromise?: T;
+        authenticityCopy?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "homepage_select".
+ */
+export interface HomepageSelect<T extends boolean = true> {
+  layout?:
+    | T
+    | {
+        hero?: T | HeroBlockSelect<T>;
+        trustBadges?: T | TrustBadgesBlockSelect<T>;
+        featuredProducts?: T | FeaturedProductsBlockSelect<T>;
+        categoryGrid?: T | CategoryGridBlockSelect<T>;
+        promoBanner?: T | PromoBannerBlockSelect<T>;
+        bestSellers?: T | BestSellersBlockSelect<T>;
+        testimonials?: T | TestimonialsBlockSelect<T>;
+        authenticity?: T | AuthenticityBlockSelect<T>;
+        richText?: T | RichTextBlockSelect<T>;
+        newsletter?: T | NewsletterBlockSelect<T>;
+        cta?: T | CtaBlockSelect<T>;
+      };
+  seo?:
+    | T
+    | {
+        metaTitle?: T;
+        metaDescription?: T;
+        ogImage?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HeroBlock_select".
+ */
+export interface HeroBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  headline?: T;
+  headlineAccent?: T;
+  subheadline?: T;
+  primaryCta?:
+    | T
+    | {
+        label?: T;
+        href?: T;
+      };
+  secondaryCta?:
+    | T
+    | {
+        label?: T;
+        href?: T;
+      };
+  image?: T;
+  floatingBadges?:
+    | T
+    | {
+        text?: T;
+        id?: T;
+      };
+  align?: T;
+  theme?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TrustBadgesBlock_select".
+ */
+export interface TrustBadgesBlockSelect<T extends boolean = true> {
+  heading?: T;
+  badges?:
+    | T
+    | {
+        icon?: T;
+        label?: T;
+        sub?: T;
+        id?: T;
+      };
+  theme?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FeaturedProductsBlock_select".
+ */
+export interface FeaturedProductsBlockSelect<T extends boolean = true> {
+  heading?: T;
+  subheading?: T;
+  products?: T;
+  viewAll?:
+    | T
+    | {
+        label?: T;
+        href?: T;
+      };
+  theme?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CategoryGridBlock_select".
+ */
+export interface CategoryGridBlockSelect<T extends boolean = true> {
+  heading?: T;
+  subheading?: T;
+  categories?: T;
+  layout?: T;
+  theme?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PromoBannerBlock_select".
+ */
+export interface PromoBannerBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  body?: T;
+  image?: T;
+  cta?:
+    | T
+    | {
+        label?: T;
+        href?: T;
+      };
+  layout?: T;
+  theme?: T;
+  startAt?: T;
+  endAt?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "BestSellersBlock_select".
+ */
+export interface BestSellersBlockSelect<T extends boolean = true> {
+  heading?: T;
+  subheading?: T;
+  products?: T;
+  theme?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TestimonialsBlock_select".
+ */
+export interface TestimonialsBlockSelect<T extends boolean = true> {
+  heading?: T;
+  subheading?: T;
+  theme?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "AuthenticityBlock_select".
+ */
+export interface AuthenticityBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  body?: T;
+  points?:
+    | T
+    | {
+        text?: T;
+        id?: T;
+      };
+  image?: T;
+  verifyCta?:
+    | T
+    | {
+        label?: T;
+        href?: T;
+      };
+  theme?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "RichTextBlock_select".
+ */
+export interface RichTextBlockSelect<T extends boolean = true> {
+  content?: T;
+  align?: T;
+  theme?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "NewsletterBlock_select".
+ */
+export interface NewsletterBlockSelect<T extends boolean = true> {
+  heading?: T;
+  subheading?: T;
+  placeholder?: T;
+  ctaLabel?: T;
+  theme?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CtaBlock_select".
+ */
+export interface CtaBlockSelect<T extends boolean = true> {
+  heading?: T;
+  subheading?: T;
+  primaryCta?:
+    | T
+    | {
+        label?: T;
+        href?: T;
+      };
+  secondaryCta?:
+    | T
+    | {
+        label?: T;
+        href?: T;
+      };
+  theme?: T;
+  id?: T;
+  blockName?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
