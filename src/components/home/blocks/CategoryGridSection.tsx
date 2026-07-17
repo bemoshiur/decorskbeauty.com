@@ -71,10 +71,10 @@ export async function CategoryGridSection({ block }: { block: CategoryGridBlock 
                   }
                 />
 
-                {/* Legibility scrim for the name */}
-                <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/20 to-transparent" aria-hidden />
-                {/* Accent-token wash from bottom-left */}
-                <div className={cn('absolute inset-0 bg-gradient-to-tr via-transparent to-transparent', tint)} aria-hidden />
+                {/* Clean bottom scrim for legibility (single gradient — no muddy mid-tone) */}
+                <div className="absolute inset-0 bg-gradient-to-t from-celadon-ink/85 to-transparent" aria-hidden />
+                {/* Soft accent glow, top-right only — tints the tile without washing the whole image */}
+                <div className={cn('absolute -right-10 -top-10 h-36 w-36 rounded-full bg-gradient-to-br to-transparent opacity-80 blur-2xl', tint)} aria-hidden />
 
                 <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-5 sm:p-6">
                   <h3

@@ -37,7 +37,7 @@ export async function BestSellersSection({ block }: { block: BestSellersBlock })
             onDark={onDark}
           />
           <Reveal delay={0.1} className="shrink-0">
-            <Button href="/products" variant="secondary" size="sm">
+            <Button href="/search" variant="secondary" size="sm">
               Shop all
               <Icon name="sparkles" className="h-4 w-4" />
             </Button>

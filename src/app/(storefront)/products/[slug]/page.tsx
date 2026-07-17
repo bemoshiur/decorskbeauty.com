@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { RichText } from '@payloadcms/richtext-lexical/react'
-import { ChevronRight, ShieldCheck } from 'lucide-react'
+import { ChevronRight, ShieldCheck, Sparkles } from 'lucide-react'
 
 import type { Ingredient, Product } from '@/payload-types'
 import {
@@ -144,13 +144,16 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             </section>
           )}
           {product.howToUse && (
-            <section>
-              <h2 className="mb-3 font-display text-xl font-semibold text-ink">How to use</h2>
+            <section className="rounded-card bg-paper p-6 ring-1 ring-line">
+              <h2 className="mb-3 flex items-center gap-2 font-display text-xl font-semibold text-ink">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-celadon/15 text-celadon-deep"><Sparkles className="h-4 w-4" /></span>
+                How to use
+              </h2>
               <div className="prose-sm max-w-none"><RichText data={product.howToUse} /></div>
             </section>
           )}
           {product.description && (
-            <section>
+            <section className="rounded-card bg-paper p-6 ring-1 ring-line">
               <h2 className="mb-3 font-display text-xl font-semibold text-ink">About this product</h2>
               <div className="prose-sm max-w-none"><RichText data={product.description} /></div>
             </section>
