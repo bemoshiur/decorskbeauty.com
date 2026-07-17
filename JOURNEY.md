@@ -386,3 +386,27 @@ ARNs/IDs kept in private memory + placeholder'd in the repo doc, not committed.
 **Open:** Lambda `APP_URL` points at the amplifyapp.com origin — repoint to https://decorskbeauty.com when
 the custom domain lands (owner deferred the domain). Secret hardening (SSM vs baked/Lambda-env) still open.
 **Next:** owner-directed — custom domain when ready, or continue storefront polish.
+
+## 2026-07-18 · Feature · Customer reviews + AggregateRating rich snippets
+**Shipped:** a real, moderated product-reviews system — the #12/#29-compliant way to finally get star
+rich snippets in Google. Customers submit a rating + review from the PDP; the owner approves in admin;
+ONLY approved reviews render or count toward the rating, so it can never be seeded or faked.
+**Pieces:** `Reviews` collection (public create → always status=pending; admin-only moderate;
+authorPhone/authorIp private via field-level read gate) · `lib/commerce/reviews.ts` behind the #13
+boundary (getReviewSummary + listApprovedReviews → phone-free DTOs; `hasPurchasedProduct` sets
+verifiedPurchase from a real delivered/paid order; pure `summarize()`) · `POST /api/reviews`
+(validate + per-IP/day rate-limit + per-phone+product dedupe + slug-resolved product, never a client id)
+· `productJsonLd` now emits AggregateRating + Review only when real approved reviews exist ·
+PDP section (summary + distribution bars + list + accessible star-picker form + honest empty state +
+above-the-fold rating link).
+**Migration:** `20260717_182127_reviews`. Dev-push (Payload push:!isProd, tripped when the int test booted
+against the shared Neon DB) had already created the table, so `pnpm migrate` hit "type already exists" —
+baselined the record at batch 3 (table verified present with all 13 columns). Same pattern as the initial
+baseline earlier.
+**Non-negotiables:** #12/#29 honoured (real approved reviews only — verified in tests: count 0 → no
+aggregateRating) · #13 (storefront reads only via lib/commerce; DTO strips the private phone) · product
+titles/English unchanged. Nothing in the money path touched.
+**Verified:** tsc clean · 127 unit/int tests (added reviews + jsonld-rating specs) · production build
+succeeds (PDP still SSG). Deploying as commit 7fac2f0.
+**Next:** verify live (empty state + form + AggregateRating once a review is approved); then owner-directed
+(custom domain when ready).
