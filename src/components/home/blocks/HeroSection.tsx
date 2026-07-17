@@ -2,6 +2,7 @@
 
 import { useRef } from 'react'
 import { m, useReducedMotion, useScroll, useTransform } from 'framer-motion'
+import { Check, Truck } from 'lucide-react'
 import type { HeroBlock } from '@/payload-types'
 import { cn } from '@/lib/cn'
 import { Container } from '@/components/ui/Container'
@@ -96,22 +97,52 @@ export function HeroSection({ block }: { block: HeroBlock }) {
               <div className="overflow-hidden rounded-feature shadow-lift ring-1 ring-white/40">
                 <StoreImage media={block.image} alt={block.headline} priority ratio="portrait" sizes="(min-width: 1024px) 40vw, 90vw" />
               </div>
-              {/* floating authenticity chip */}
+              {/* floating authenticity chip (bottom-left) */}
               <m.div
                 initial={reduce ? false : { opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, ease: easeOutSoft, delay: 0.6 }}
-                className="glass absolute -left-4 bottom-8 flex items-center gap-3 rounded-2xl px-4 py-3 shadow-soft ring-1 ring-line sm:-left-8"
+                transition={{ duration: 0.6, ease: easeOutSoft, delay: 0.55 }}
+                className="glass absolute -left-4 bottom-10 flex items-center gap-3 rounded-2xl px-4 py-3 shadow-lift ring-1 ring-line sm:-left-8"
               >
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-celadon-deep text-white">✓</span>
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-celadon-deep text-white"><Check className="h-5 w-5" /></span>
                 <div className="text-left">
                   <p className="text-sm font-semibold text-ink">100% Authentic</p>
                   <p className="font-mono text-[11px] text-grey">Verifiable batch code</p>
                 </div>
               </m.div>
+              {/* floating COD chip (top-right) */}
+              <m.div
+                initial={reduce ? false : { opacity: 0, y: -12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: easeOutSoft, delay: 0.75 }}
+                className="glass absolute -right-3 top-8 flex items-center gap-3 rounded-2xl px-4 py-3 shadow-lift ring-1 ring-line sm:-right-6"
+              >
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-apricot/40 text-celadon-ink"><Truck className="h-5 w-5" /></span>
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-ink">Cash on Delivery</p>
+                  <p className="font-mono text-[11px] text-grey">Pay when it arrives</p>
+                </div>
+              </m.div>
             </m.div>
           )}
         </div>
+
+        {/* Scroll cue */}
+        <m.div
+          initial={reduce ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 1 }}
+          className="mt-14 hidden justify-center lg:flex"
+          aria-hidden
+        >
+          <span className="flex h-10 w-6 items-start justify-center rounded-full border border-celadon-deep/40 p-1.5">
+            <m.span
+              className="h-2 w-1 rounded-full bg-celadon-deep"
+              animate={reduce ? undefined : { y: [0, 8, 0] }}
+              transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+            />
+          </span>
+        </m.div>
       </Container>
     </section>
   )

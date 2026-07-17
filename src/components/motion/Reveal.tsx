@@ -36,7 +36,7 @@ export function Reveal({ children, className, variants = fadeUp, delay = 0, amou
       initial="hidden"
       whileInView="show"
       // Fire as soon as a sliver approaches the viewport (reliable even on fast scroll); reveal once.
-      viewport={{ once: true, amount, margin: '0px 0px -80px 0px' }}
+      viewport={{ once: true, amount, margin: '0px 0px 200px 0px' }}
       transition={{ delay }}
     >
       {children}
@@ -72,7 +72,7 @@ export function RevealGroup({
       variants={staggerParent(stagger)}
       initial="hidden"
       whileInView="show"
-      viewport={{ once: true, amount, margin: '0px 0px -80px 0px' }}
+      viewport={{ once: true, amount, margin: '0px 0px 200px 0px' }}
     >
       {children}
     </MTag>

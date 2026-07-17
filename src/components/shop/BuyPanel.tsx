@@ -38,6 +38,8 @@ export function BuyPanel({
   const [selectedId, setSelectedId] = useState(variants[0]?.id)
   const selected = variants.find((v) => v.id === selectedId) ?? variants[0]
   const discount = selected && selected.mrp > selected.price ? Math.round(((selected.mrp - selected.price) / selected.mrp) * 100) : 0
+  // Honesty: never show a "SALE" badge unless there's an actual discount (trust-first brand).
+  const shownBadge = badge === 'sale' && discount === 0 ? null : badge
 
   return (
     <div className="flex flex-col gap-5">
@@ -45,7 +47,7 @@ export function BuyPanel({
         {brand && <p className="text-xs font-semibold uppercase tracking-[0.14em] text-celadon-deep">{brand}</p>}
         <div className="mt-1 flex items-start gap-3">
           <h1 className="font-display text-3xl font-semibold leading-tight tracking-tight text-ink sm:text-4xl">{productTitle}</h1>
-          {badge && <Badge tone={badge} className="mt-1 shrink-0" />}
+          {shownBadge && <Badge tone={shownBadge} className="mt-1 shrink-0" />}
         </div>
       </div>
 
